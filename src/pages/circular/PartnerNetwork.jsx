@@ -5,8 +5,6 @@ import {
   useCircularData,
   useToast,
   Toast,
-  SimulationNote,
-  SimBadge,
   PathwayDot,
   SuitabilityBadge,
   FilterChips,
@@ -27,6 +25,7 @@ import {
   matchPartners,
   recordStatusMap,
   pickupDaysLabel,
+  partnerBuys,
 } from "../../lib/circularRecovery";
 
 export default function PartnerNetwork({ onNavigate, params }) {
@@ -81,11 +80,6 @@ export default function PartnerNetwork({ onNavigate, params }) {
   return (
     <div className="space-y-6 animate-rise">
       <Toast toast={toast} onClose={clear} />
-
-      <SimulationNote>
-        Semua mitra di bawah adalah <b>data demo (simulasi)</b> — nama, lokasi, kapasitas, dan tarif bukan mitra
-        sungguhan. Jarak dihitung garis lurus dari lokasi dapur.
-      </SimulationNote>
 
       <div className="grid lg:grid-cols-[1fr_1.4fr] gap-6 items-start">
         <Card className="p-5">
@@ -163,7 +157,7 @@ export default function PartnerNetwork({ onNavigate, params }) {
           ]}
         />
         {selected.length > 0 && (
-          <p className="text-xs text-[var(--color-ink-400)]">Diurutkan: mitra cocok → kesesuaian jalur → jarak terdekat</p>
+          <p className="text-xs text-[var(--color-ink-400)]">Diurutkan: mitra cocok → kesesuaian jalur → hasil bersih terbesar → jarak</p>
         )}
       </div>
 
@@ -195,7 +189,6 @@ function PartnerCard({ match, hasSelection, onRequest }) {
     <Card className="p-5 flex flex-col">
       <div className="flex items-start justify-between gap-2">
         <PathwayDot pathway={p.type} />
-        {p.simulated && <SimBadge />}
       </div>
       <h3 className="font-bold text-[var(--color-forest-900)] mt-2">{p.name}</h3>
       <p className="text-xs text-[var(--color-ink-400)] flex items-center gap-1 mt-0.5">
@@ -227,26 +220,47 @@ function PartnerCard({ match, hasSelection, onRequest }) {
         </div>
         <div>
           <dt className="text-[var(--color-ink-400)] flex items-center gap-1">
-            <Truck size={12} /> {hasSelection ? "Estimasi biaya" : "Tarif angkut"}
+            <Truck size={12} /> Ongkos angkut
           </dt>
           <dd className="font-semibold text-[var(--color-forest-900)] mt-0.5">
-            {hasSelection
-              ? fmtRp(tariff.cost)
-              : `${fmtRp(p.transportFeeFlat)}${p.transportFeePerKg ? ` + ${fmtRp(p.transportFeePerKg)}/kg` : ""}`}
+            {p.transportFeeFlat || p.transportFeePerKg
+              ? `${fmtRp(p.transportFeeFlat)}${p.transportFeePerKg ? ` + ${fmtRp(p.transportFeePerKg)}/kg` : ""}`
+              : "Gratis"}
           </dd>
           <dd className="text-[var(--color-ink-400)]">Min. {fmtKg(p.minPickupKg)} · radius {p.serviceRadiusKm} km</dd>
         </div>
-        <div className="col-span-2">
-          <dt className="text-[var(--color-ink-400)] flex items-center gap-1">
-            <Coins size={12} /> Nilai material
-          </dt>
-          <dd className="font-semibold text-[var(--color-forest-900)] mt-0.5">
-            {p.materialValuePerKg == null
-              ? "Tidak tersedia"
-              : `${fmtRp(p.materialValuePerKg)}/kg${hasSelection ? ` · est. ${fmtRp(tariff.value)}` : ""}`}
-          </dd>
-        </div>
       </dl>
+
+      <div className="mt-4 rounded-xl bg-leaf-50 p-3">
+        <p className="text-xs font-semibold text-[var(--color-forest-900)] flex items-center gap-1.5">
+          <Coins size={13} className="text-[var(--color-leaf-500)]" /> Harga beli per kg
+        </p>
+        {partnerBuys(p) ? (
+          <ul className="mt-1.5 space-y-0.5 text-xs text-[var(--color-ink-600)]">
+            {p.accepts.map((c) => (
+              <li key={c} className="flex justify-between gap-2">
+                <span>{labelOf(WASTE_CATEGORIES, c)}</span>
+                <b className="text-[var(--color-forest-900)]">
+                  {p.pricePerKg[c] ? `${fmtRp(p.pricePerKg[c])}/kg` : "Gratis"}
+                </b>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-[var(--color-ink-600)] mt-1">Tidak membeli — limbah diambil gratis.</p>
+        )}
+        {hasSelection && (
+          <div className="mt-2 pt-2 border-t border-leaf-100 text-xs flex flex-wrap justify-between gap-x-3 gap-y-1">
+            <span className="text-[var(--color-ink-600)]">
+              Est. pendapatan <b className="text-[var(--color-forest-900)]">{fmtRp(tariff.income)}</b>
+              {tariff.cost > 0 && <> − angkut {fmtRp(tariff.cost)}</>}
+            </span>
+            <span className={`font-bold ${tariff.net < 0 ? "text-[#c0392b]" : "text-[var(--color-leaf-500)]"}`}>
+              Bersih {fmtRp(tariff.net)}
+            </span>
+          </div>
+        )}
+      </div>
 
       <p className="text-xs text-[var(--color-ink-400)] mt-4">
         Menerima: {p.accepts.map((c) => labelOf(WASTE_CATEGORIES, c).toLowerCase()).join(", ")}

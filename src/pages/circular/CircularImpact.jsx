@@ -12,9 +12,9 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { Recycle, CheckCircle2, Hourglass, Target, Wallet, Coins, Scale, Leaf, PieChart as PieIcon } from "lucide-react";
+import { Recycle, CheckCircle2, Hourglass, Target, Wallet, Coins, Scale, Leaf, TrendingUp, PieChart as PieIcon } from "lucide-react";
 import { Card, SectionHeading } from "../../components/Card";
-import { useCircularData, StatCard, EmptyState, SimulationNote, fmtKg, fmtRp } from "../../components/Circular";
+import { useCircularData, StatCard, EmptyState, fmtKg, fmtRp } from "../../components/Circular";
 import { computeCircularStats, DISCREPANCY_THRESHOLD_PCT } from "../../lib/circularRecovery";
 
 const TOOLTIP_STYLE = { borderRadius: 12, border: "1px solid var(--color-leaf-100)", fontSize: 13 };
@@ -52,12 +52,6 @@ export default function CircularImpact({ onNavigate }) {
 
   return (
     <div className="space-y-6 animate-rise">
-      {pickups.some((p) => p.simulated) && (
-        <SimulationNote>
-          Angka di bawah dihitung dari transaksi dengan <b>mitra demo (simulasi)</b>. Biaya dan nilai material memakai
-          tarif simulasi saat pengajuan.
-        </SimulationNote>
-      )}
 
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard icon={Recycle} label="Total Tercatat" value={fmtKg(stats.totalRecordedKg)} hint={`${stats.recordCount} catatan limbah`} />
@@ -146,31 +140,44 @@ export default function CircularImpact({ onNavigate }) {
         </Card>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card className="p-5">
-          <div className="w-9 h-9 rounded-lg bg-[#fdecec] grid place-items-center text-[#c0392b] mb-3">
-            <Wallet size={17} />
-          </div>
-          <p className="text-xs font-semibold text-[var(--color-ink-600)] uppercase tracking-wide">Biaya Pengelolaan</p>
-          <p className="text-2xl font-extrabold text-[var(--color-forest-900)] mt-1">{fmtRp(stats.managementCost)}</p>
-          <p className="text-xs text-[var(--color-ink-400)] mt-1">Tarif angkut × berat aktual, transaksi diterima</p>
-        </Card>
+      <div>
+        <SectionHeading
+          eyebrow="Pendapatan dari Limbah"
+          title="Uang yang didapat restoran"
+          subtitle="Berat aktual diterima mitra × harga beli per kg, dikurangi ongkos angkut"
+        />
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <StatCard
+            icon={Coins}
+            label="Pendapatan Diterima"
+            value={fmtRp(stats.incomePaid)}
+            hint="Pembayaran yang sudah dikonfirmasi mitra"
+          />
+          <StatCard
+            icon={Hourglass}
+            tone="gold"
+            label="Menunggu Pembayaran"
+            value={fmtRp(stats.incomePending)}
+            hint={`${stats.pendingPaymentCount} transaksi diterima, belum dibayar`}
+          />
+          <StatCard
+            icon={Wallet}
+            tone="amber"
+            label="Ongkos Angkut"
+            value={fmtRp(stats.managementCost)}
+            hint="Biaya ke mitra untuk transaksi diterima"
+          />
+          <StatCard
+            icon={TrendingUp}
+            tone="forest"
+            label="Hasil Bersih"
+            value={fmtRp(stats.netIncome)}
+            hint="Pendapatan (dibayar + menunggu) − ongkos angkut"
+          />
+        </div>
+      </div>
 
-        <Card className="p-5">
-          <div className="w-9 h-9 rounded-lg bg-[#fff8e6] grid place-items-center text-[#a67c00] mb-3">
-            <Coins size={17} />
-          </div>
-          <p className="text-xs font-semibold text-[var(--color-ink-600)] uppercase tracking-wide">Nilai Ekonomi Dipulihkan</p>
-          <p className="text-2xl font-extrabold text-[var(--color-forest-900)] mt-1">
-            {stats.recoveredValue == null ? "—" : fmtRp(stats.recoveredValue)}
-          </p>
-          <p className="text-xs text-[var(--color-ink-400)] mt-1">
-            {stats.recoveredValue == null
-              ? "Tidak tersedia — mitra penerima tidak mencantumkan nilai material"
-              : "Nilai material per kg dari mitra × berat aktual"}
-          </p>
-        </Card>
-
+      <div className="grid md:grid-cols-[1fr_2fr] gap-4">
         <Card className="p-5">
           <div className="w-9 h-9 rounded-lg bg-leaf-50 grid place-items-center text-[var(--color-leaf-500)] mb-3">
             <Scale size={17} />
@@ -185,23 +192,23 @@ export default function CircularImpact({ onNavigate }) {
             selisih &gt;{DISCREPANCY_THRESHOLD_PCT}%
           </p>
         </Card>
-      </div>
 
-      <Card className="p-5">
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-leaf-50 grid place-items-center text-[var(--color-leaf-500)] shrink-0">
-            <Leaf size={17} />
+        <Card className="p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-leaf-50 grid place-items-center text-[var(--color-leaf-500)] shrink-0">
+              <Leaf size={17} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[var(--color-forest-900)]">Estimasi dampak lingkungan belum ditampilkan</p>
+              <p className="text-sm text-[var(--color-ink-600)] mt-1">
+                Estimasi emisi (CO₂e) untuk tiap jalur pengolahan butuh metode dan faktor emisi yang terverifikasi untuk
+                mitra terkait. Faktor tersebut belum tersedia, jadi angka dampak lingkungan tidak dihitung agar tidak
+                menyesatkan.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold text-[var(--color-forest-900)]">Estimasi dampak lingkungan belum ditampilkan</p>
-            <p className="text-sm text-[var(--color-ink-600)] mt-1">
-              Estimasi emisi (CO₂e) untuk tiap jalur pengolahan butuh metode dan faktor emisi yang terverifikasi untuk
-              mitra terkait. Faktor tersebut belum tersedia, jadi angka dampak lingkungan tidak dihitung agar tidak
-              menyesatkan.
-            </p>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

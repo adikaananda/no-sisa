@@ -116,9 +116,9 @@ dulu kalau bahan masih layak.
 | Overview | Alur 6 tahap, ringkasan, daftar langkah berikutnya |
 | Waste Recording | Catat kategori, berat (timbangan/input staf), waktu, sumber, pemilahan, karakteristik, foto |
 | AI Waste Analysis | Rekomendasi jalur berbasis aturan + opsional Gemini; minta data tambahan kalau belum cukup |
-| Partner Network | Pencocokan mitra: jenis limbah, jarak, kapasitas, jadwal, biaya/nilai material |
+| Partner Network | Pencocokan mitra: jenis limbah, jarak, kapasitas, jadwal, harga beli per kg & ongkos angkut |
 | Pickup Scheduling | Ajukan pengambilan & pantau status (Menunggu Konfirmasi → Disetujui → Terjadwal → Dalam Pengambilan → Diterima / Dibatalkan) |
-| Recovery History | Riwayat transaksi, berat awal vs berat aktual, selisih |
+| Recovery History | Riwayat transaksi, berat awal vs berat aktual, selisih, pendapatan |
 | Circular Impact | Statistik dampak — hanya transaksi berstatus **Diterima** yang dihitung tersalurkan |
 
 Catatan penting:
@@ -126,6 +126,11 @@ Catatan penting:
 - **Data mitra adalah data demo (simulasi)** di `src/lib/circularRecovery.js` (`DEMO_PARTNERS`).
   Aksi mitra (terima/tolak/konfirmasi penerimaan) disimulasikan di UI dan selalu diberi label simulasi.
   Ganti dengan data & API mitra nyata saat tersedia.
+- **Restoran dapat uang per kg** (seperti bank sampah): pendapatan = berat aktual diterima mitra ×
+  harga beli per kg (dikunci saat pengajuan). Setelah status Diterima, pembayaran berstatus
+  "Menunggu pembayaran" sampai mitra mengonfirmasi (metode & no. referensi). Circular Impact
+  menampilkan pendapatan diterima, menunggu pembayaran, ongkos angkut, dan hasil bersih.
+  Harga di data demo adalah simulasi, bukan harga pasar.
 - Integrasi fitur lama: bahan "hampir kedaluwarsa" dari Stock Predictor dan over-production dari
   Analisis Kerugian muncul sebagai referensi sumber limbah; ringkasan dampak juga tampil di Analytics.
 - Estimasi dampak lingkungan (CO₂e) sengaja tidak dihitung karena faktor emisi terverifikasi belum tersedia.

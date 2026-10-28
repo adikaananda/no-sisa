@@ -7,13 +7,14 @@ import {
   usePickupDetail,
   Toast,
   PickupStatusBadge,
+  PaymentBadge,
   PickupDetailModal,
   PathwayDot,
-  SimBadge,
   FilterChips,
   EmptyState,
   INPUT,
   fmtKg,
+  fmtRp,
   fmtDate,
   fmtDateTime,
 } from "../../components/Circular";
@@ -30,7 +31,7 @@ export default function RecoveryHistory({ onNavigate }) {
   const data = useCircularData();
   const { records, pickups } = data;
   const { toast, notify, clear } = useToast();
-  const detail = usePickupDetail({ pickups, updatePickupStatus: data.updatePickupStatus, notify });
+  const detail = usePickupDetail({ pickups, updatePickupStatus: data.updatePickupStatus, payPickup: data.payPickup, notify });
   const [status, setStatus] = useState("all");
   const [pathway, setPathway] = useState("all");
 
@@ -53,6 +54,7 @@ export default function RecoveryHistory({ onNavigate }) {
           records={records}
           onClose={() => detail.setOpenId(null)}
           onTransition={detail.onTransition}
+          onPay={detail.onPay}
         />
       )}
 
@@ -101,7 +103,7 @@ export default function RecoveryHistory({ onNavigate }) {
           />
         ) : (
           <div className="overflow-x-auto -mx-2">
-            <table className="w-full text-sm min-w-[760px]">
+            <table className="w-full text-sm min-w-[880px]">
               <thead>
                 <tr className="text-left text-xs font-semibold text-[var(--color-ink-600)] uppercase tracking-wide">
                   <th className="px-2 py-2">Diajukan</th>
@@ -110,6 +112,7 @@ export default function RecoveryHistory({ onNavigate }) {
                   <th className="px-2 py-2">Berat awal</th>
                   <th className="px-2 py-2">Diterima</th>
                   <th className="px-2 py-2">Selisih</th>
+                  <th className="px-2 py-2">Pendapatan</th>
                   <th className="px-2 py-2">Status</th>
                 </tr>
               </thead>
@@ -136,7 +139,6 @@ export default function RecoveryHistory({ onNavigate }) {
                         </button>
                         <div className="flex items-center gap-2 mt-1">
                           <PathwayDot pathway={p.pathway} />
-                          {p.simulated && <SimBadge />}
                         </div>
                       </td>
                       <td className="px-2 py-3 text-[var(--color-ink-600)] whitespace-nowrap">
@@ -155,6 +157,18 @@ export default function RecoveryHistory({ onNavigate }) {
                           </span>
                         ) : (
                           "—"
+                        )}
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap">
+                        {p.payment ? (
+                          <>
+                            <span className="font-semibold text-[var(--color-forest-900)]">{fmtRp(p.payment.amount)}</span>
+                            <span className="block mt-1">
+                              <PaymentBadge payment={p.payment} />
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-[var(--color-ink-400)]">{p.status === "diterima" ? "Gratis" : "—"}</span>
                         )}
                       </td>
                       <td className="px-2 py-3">

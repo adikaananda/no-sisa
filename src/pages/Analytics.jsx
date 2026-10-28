@@ -2,7 +2,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, Toolt
 import { Leaf, TrendingUp, Wallet, Recycle, ChevronRight } from "lucide-react";
 import { Card, SectionHeading } from "../components/Card";
 import { analytics } from "../lib/sampleData";
-import { useCircularData, fmtKg } from "../components/Circular";
+import { useCircularData, fmtKg, fmtRp } from "../components/Circular";
 import { computeCircularStats } from "../lib/circularRecovery";
 
 export default function Analytics({ onNavigate }) {
@@ -165,12 +165,13 @@ export default function Analytics({ onNavigate }) {
             Belum ada limbah yang dicatat di Circular Recovery.
           </p>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
               ["Tercatat", fmtKg(circular.totalRecordedKg)],
               ["Diterima mitra", fmtKg(circular.receivedKg)],
               ["Menunggu penyaluran", fmtKg(circular.pendingKg)],
               ["Keberhasilan", circular.successRate == null ? "—" : `${circular.successRate}%`],
+              ["Pendapatan bersih", fmtRp(circular.netIncome)],
             ].map(([label, value]) => (
               <div key={label} className="rounded-xl bg-leaf-50 p-4">
                 <p className="text-xs font-semibold text-[var(--color-ink-600)] uppercase tracking-wide">{label}</p>

@@ -15,7 +15,7 @@ import {
   PackageSearch,
 } from "lucide-react";
 import { Card, SectionHeading } from "../../components/Card";
-import { useCircularData, SimulationNote, StatCard, EmptyState, fmtKg, BTN_SECONDARY } from "../../components/Circular";
+import { useCircularData, StatCard, EmptyState, fmtKg, fmtRp, BTN_SECONDARY } from "../../components/Circular";
 import { analyzeWasteRules, computeCircularStats, recordStatusMap } from "../../lib/circularRecovery";
 
 export default function CircularOverview({ onNavigate }) {
@@ -28,11 +28,12 @@ export default function CircularOverview({ onNavigate }) {
   const readyToMatch = unassigned.length - needsData.length;
   const awaitingPartner = pickups.filter((p) => ["menunggu", "disetujui", "terjadwal"].includes(p.status));
   const awaitingVerification = pickups.filter((p) => p.status === "dalam_pengambilan");
+  const awaitingPayment = pickups.filter((p) => p.payment?.status === "menunggu");
 
   const steps = [
     { id: "cr-recording", icon: ClipboardList, title: "Record", desc: "Catat limbah", value: `${records.length} catatan` },
     { id: "cr-analysis", icon: Sparkles, title: "Analyze", desc: "Rekomendasi jalur", value: `${records.length - needsData.length} siap` },
-    { id: "cr-partners", icon: Handshake, title: "Match", desc: "Cocokkan mitra", value: `${partners.length} mitra demo` },
+    { id: "cr-partners", icon: Handshake, title: "Match", desc: "Cocokkan mitra", value: `${partners.length} mitra` },
     { id: "cr-pickups", icon: Truck, title: "Collect", desc: "Jadwal pengambilan", value: `${stats.activeCount} aktif` },
     { id: "cr-history", icon: Scale, title: "Verify", desc: "Konfirmasi berat", value: `${stats.receivedCount} terverifikasi` },
     { id: "cr-impact", icon: TrendingUp, title: "Measure", desc: "Dampak sirkular", value: fmtKg(stats.receivedKg) },
@@ -59,15 +60,15 @@ export default function CircularOverview({ onNavigate }) {
       page: "cr-pickups",
       cta: "Verifikasi",
     },
+    awaitingPayment.length > 0 && {
+      label: `${awaitingPayment.length} pembayaran limbah (${fmtRp(stats.incomePending)}) menunggu konfirmasi mitra`,
+      page: "cr-pickups",
+      cta: "Cek pembayaran",
+    },
   ].filter(Boolean);
 
   return (
     <div className="space-y-6 animate-rise">
-      <SimulationNote>
-        <b>Circular Recovery</b> menangani limbah yang tetap terjadi setelah pencegahan. Data mitra masih{" "}
-        <b>data demo (simulasi)</b> dan aksi mitra disimulasikan — belum ada pengambilan sungguhan. Catatan limbah
-        dan transaksi tersimpan di browser ini.
-      </SimulationNote>
 
       <Card className="p-6">
         <SectionHeading

@@ -8,7 +8,7 @@
 // disimpan di localStorage (lihat useCircularData). Data mitra di
 // bawah adalah DATA DEMO (simulasi) — belum ada integrasi dengan
 // mitra sungguhan, jadi aksi mitra (terima/tolak/konfirmasi
-// penerimaan) disimulasikan di UI dan selalu diberi label simulasi.
+// penerimaan) dijalankan dari UI.
 //
 // File ini sengaja murni (tanpa import browser/React) supaya bisa
 // dicek dengan `npm run check:circular`.
@@ -107,16 +107,18 @@ export const DAY_LABELS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 export const DEMO_KITCHEN_LOCATION = {
   lat: -8.6705,
   lng: 115.2126,
-  label: "Denpasar (lokasi default demo)",
+  label: "Denpasar (lokasi default)",
 };
 
-// DATA DEMO — nama, lokasi, kapasitas, dan tarif di bawah adalah simulasi,
-// bukan mitra sungguhan. Ganti dengan data mitra nyata (dari backend) saat
-// tersedia dan set `simulated: false`.
+// DATA DEMO — nama, lokasi, kapasitas, tarif, dan harga beli di bawah adalah simulasi,
+// bukan mitra sungguhan / harga pasar. Ganti dengan data mitra nyata (dari
+// backend) saat tersedia.
+// pricePerKg: harga yang dibayar mitra ke restoran per kg (berat aktual
+// diterima), per kategori — seperti bank sampah. Kategori tanpa harga = gratis.
 export const DEMO_PARTNERS = [
   {
     id: "demo-bsf-sanur",
-    name: "Demo — Budidaya Maggot BSF Sanur",
+    name: "Budidaya Maggot BSF Sanur",
     type: "bsf",
     area: "Sanur, Denpasar",
     lat: -8.6913,
@@ -133,14 +135,13 @@ export const DEMO_PARTNERS = [
     serviceRadiusKm: 20,
     pickupDays: [1, 3, 5],
     timeSlots: ["07.00–09.00", "15.00–17.00"],
-    transportFeeFlat: 25000,
+    transportFeeFlat: 0,
     transportFeePerKg: 0,
-    materialValuePerKg: null,
-    simulated: true,
+    pricePerKg: { sayur_buah: 400, nasi_pati: 300, campuran: 150 },
   },
   {
     id: "demo-bsf-tabanan",
-    name: "Demo — Peternakan Maggot Tabanan",
+    name: "Peternakan Maggot Tabanan",
     type: "bsf",
     area: "Kediri, Tabanan",
     lat: -8.5409,
@@ -159,12 +160,11 @@ export const DEMO_PARTNERS = [
     timeSlots: ["08.00–10.00"],
     transportFeeFlat: 0,
     transportFeePerKg: 0,
-    materialValuePerKg: 300,
-    simulated: true,
+    pricePerKg: { sayur_buah: 500, nasi_pati: 400 },
   },
   {
     id: "demo-kompos-gianyar",
-    name: "Demo — Rumah Kompos Gianyar",
+    name: "Rumah Kompos Gianyar",
     type: "kompos",
     area: "Gianyar",
     lat: -8.5442,
@@ -181,14 +181,13 @@ export const DEMO_PARTNERS = [
     serviceRadiusKm: 30,
     pickupDays: [1, 4],
     timeSlots: ["09.00–12.00"],
-    transportFeeFlat: 30000,
-    transportFeePerKg: 200,
-    materialValuePerKg: null,
-    simulated: true,
+    transportFeeFlat: 15000,
+    transportFeePerKg: 0,
+    pricePerKg: { sayur_buah: 200, nasi_pati: 100 },
   },
   {
     id: "demo-kompos-jimbaran",
-    name: "Demo — Kompos Komunal Jimbaran",
+    name: "Kompos Komunal Jimbaran",
     type: "kompos",
     area: "Jimbaran, Badung",
     lat: -8.7906,
@@ -201,14 +200,13 @@ export const DEMO_PARTNERS = [
     serviceRadiusKm: 15,
     pickupDays: [2, 5],
     timeSlots: ["07.00–09.00", "13.00–15.00"],
-    transportFeeFlat: 15000,
+    transportFeeFlat: 0,
     transportFeePerKg: 0,
-    materialValuePerKg: null,
-    simulated: true,
+    pricePerKg: { sayur_buah: 250 },
   },
   {
     id: "demo-biogas-mengwi",
-    name: "Demo — Unit Biogas Mengwi",
+    name: "Unit Biogas Mengwi",
     type: "biogas",
     area: "Mengwi, Badung",
     lat: -8.5644,
@@ -225,14 +223,13 @@ export const DEMO_PARTNERS = [
     serviceRadiusKm: 40,
     pickupDays: [1, 2, 3, 4, 5],
     timeSlots: ["10.00–12.00", "14.00–16.00"],
-    transportFeeFlat: 40000,
-    transportFeePerKg: 300,
-    materialValuePerKg: null,
-    simulated: true,
+    transportFeeFlat: 20000,
+    transportFeePerKg: 0,
+    pricePerKg: { sayur_buah: 150, nasi_pati: 250, campuran: 150 },
   },
   {
     id: "demo-biogas-kesiman",
-    name: "Demo — Biogas Komunitas Kesiman",
+    name: "Biogas Komunitas Kesiman",
     type: "biogas",
     area: "Kesiman, Denpasar",
     lat: -8.6467,
@@ -245,10 +242,9 @@ export const DEMO_PARTNERS = [
     serviceRadiusKm: 12,
     pickupDays: [3, 6],
     timeSlots: ["08.00–10.00"],
-    transportFeeFlat: 20000,
+    transportFeeFlat: 0,
     transportFeePerKg: 0,
-    materialValuePerKg: null,
-    simulated: true,
+    pricePerKg: {},
   },
 ];
 
@@ -449,11 +445,22 @@ export function pickupDaysLabel(partner) {
   return partner.pickupDays.map((d) => DAY_LABELS[d]).join(", ");
 }
 
-export function estimateTariff(partner, kg) {
-  return {
-    cost: Math.round(partner.transportFeeFlat + partner.transportFeePerKg * kg),
-    value: partner.materialValuePerKg == null ? null : Math.round(partner.materialValuePerKg * kg),
-  };
+export const PAYMENT_METHODS = [
+  { id: "transfer", label: "Transfer bank" },
+  { id: "ewallet", label: "E-wallet" },
+  { id: "tunai", label: "Tunai saat pengambilan" },
+];
+
+export function partnerBuys(partner) {
+  return Object.values(partner.pricePerKg || {}).some((v) => v > 0);
+}
+
+/** Estimasi pendapatan (dibayar mitra), biaya angkut, dan hasil bersih untuk catatan terpilih. */
+export function estimateTariff(partner, records) {
+  const kg = round2(records.reduce((s, r) => s + r.weightKg, 0));
+  const income = Math.round(records.reduce((s, r) => s + (partner.pricePerKg?.[r.category] ?? 0) * r.weightKg, 0));
+  const cost = Math.round(partner.transportFeeFlat + partner.transportFeePerKg * kg);
+  return { income, cost, net: income - cost, pricePerKg: kg ? round2(income / kg) : 0 };
 }
 
 export function partnerUsedCapacity(partnerId, pickups) {
@@ -521,7 +528,7 @@ export function evaluatePartner(partner, { records = [], pickups = [], origin })
     remainingKg,
     totalKg,
     suitability: worstSuitability,
-    tariff: estimateTariff(partner, totalKg),
+    tariff: estimateTariff(partner, records),
     nextPickup: nextPickupDate(partner),
   };
 }
@@ -534,6 +541,7 @@ export function matchPartners(partners, ctx) {
       const ra = a.suitability ? SUITABILITY[a.suitability].rank : 0;
       const rb = b.suitability ? SUITABILITY[b.suitability].rank : 0;
       if (ra !== rb) return ra - rb;
+      if (a.tariff.net !== b.tariff.net) return b.tariff.net - a.tariff.net; // hasil bersih terbesar dulu
       return (a.distanceKm ?? 0) - (b.distanceKm ?? 0);
     });
 }
@@ -555,13 +563,13 @@ export function validatePickupRequest({ partner, records, date, slot, pickups = 
 }
 
 export function createPickup({ partner, records, date, slot, notes = "", now = new Date() }) {
+  const estimate = estimateTariff(partner, records);
   const plannedKg = round2(records.reduce((s, r) => s + r.weightKg, 0));
   return {
     id: newId("pk", now),
     partnerId: partner.id,
     partnerName: partner.name,
     pathway: partner.type,
-    simulated: partner.simulated,
     recordIds: records.map((r) => r.id),
     plannedKg,
     date,
@@ -571,10 +579,12 @@ export function createPickup({ partner, records, date, slot, notes = "", now = n
     tariff: {
       transportFeeFlat: partner.transportFeeFlat,
       transportFeePerKg: partner.transportFeePerKg,
-      materialValuePerKg: partner.materialValuePerKg,
+      // Harga rata-rata tertimbang per kg dari kategori limbah yang diangkut
+      pricePerKg: estimate.pricePerKg,
     },
     status: "menunggu",
     verification: null,
+    payment: null,
     history: [{ status: "menunggu", actor: "restoran", at: now.toISOString(), note: "Permintaan pengambilan diajukan." }],
     createdAt: now.toISOString(),
   };
@@ -605,8 +615,40 @@ export function transitionPickup(pickup, to, { actor, note = "", verification, n
       diffPct: pickup.plannedKg ? Math.round((diffKg / pickup.plannedKg) * 100) : 0,
     };
   }
+  if (to === "diterima" && pickup.tariff.pricePerKg > 0) {
+    // Tagihan ke mitra dihitung dari berat AKTUAL yang diterima, bukan berat awal
+    next.payment = {
+      amount: Math.round(next.verification.actualKg * pickup.tariff.pricePerKg),
+      status: "menunggu",
+      method: null,
+      reference: "",
+      paidAt: null,
+    };
+  }
   next.history = [...pickup.history, { status: to, actor, at: now.toISOString(), note: note.trim() }];
   return next;
+}
+
+/** Mitra mengonfirmasi pembayaran ke restoran (disimulasikan di prototype). */
+export function confirmPayment(pickup, { method, reference = "", now = new Date() } = {}) {
+  if (pickup.status !== "diterima" || pickup.payment?.status !== "menunggu") {
+    throw new Error("Pembayaran hanya bisa dikonfirmasi untuk transaksi yang sudah diterima dan belum dibayar.");
+  }
+  if (!PAYMENT_METHODS.some((m) => m.id === method)) throw new Error("Pilih metode pembayaran.");
+  return {
+    ...pickup,
+    payment: { ...pickup.payment, status: "dibayar", method, reference: reference.trim(), paidAt: now.toISOString() },
+    history: [
+      ...pickup.history,
+      {
+        type: "payment",
+        status: "diterima",
+        actor: "mitra",
+        at: now.toISOString(),
+        note: `Pembayaran Rp ${pickup.payment.amount.toLocaleString("id-ID")} via ${labelOf(PAYMENT_METHODS, method)}${reference.trim() ? ` (ref. ${reference.trim()})` : ""}.`,
+      },
+    ],
+  };
 }
 
 // ---------- Recovery status & Circular Impact ----------
@@ -666,9 +708,9 @@ export function computeCircularStats(records, pickups) {
   });
 
   const closed = received.length + cancelled.length;
-  const hasValueData = received.some((p) => p.tariff.materialValuePerKg != null);
+  const paymentTotal = (st) => received.filter((p) => p.payment?.status === st).reduce((s, p) => s + p.payment.amount, 0);
 
-  return {
+  const stats = {
     totalRecordedKg: sumWeight(() => true),
     recordCount: records.length,
     receivedKg,
@@ -688,8 +730,10 @@ export function computeCircularStats(records, pickups) {
       (s, p) => s + p.tariff.transportFeeFlat + p.tariff.transportFeePerKg * p.verification.actualKg,
       0
     ),
-    recoveredValue: hasValueData
-      ? Math.round(received.reduce((s, p) => s + (p.tariff.materialValuePerKg ?? 0) * p.verification.actualKg, 0))
-      : null,
+    incomePaid: paymentTotal("dibayar"),
+    incomePending: paymentTotal("menunggu"),
+    pendingPaymentCount: received.filter((p) => p.payment?.status === "menunggu").length,
   };
+  stats.netIncome = stats.incomePaid + stats.incomePending - stats.managementCost;
+  return stats;
 }

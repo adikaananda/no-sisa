@@ -311,7 +311,7 @@ Data limbah (dicatat pengguna; berat dari ${record.weightMethod === "timbangan" 
 Hasil analisis berbasis aturan No Sisa (pembanding):
 ${JSON.stringify(ruleAnalysis.recommendations.map((r) => ({ pathway: r.pathway, suitability: r.suitability })))}
 
-Persyaratan mitra pengolah yang tersedia (data demo/simulasi):
+Persyaratan mitra pengolah yang tersedia:
 ${partnerText}
 
 Konteks operasional dapur (data yang tersedia di No Sisa):

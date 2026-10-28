@@ -5,13 +5,14 @@ import {
   CheckCircle2,
   AlertTriangle,
   X,
-  FlaskConical,
+  Handshake,
   Inbox,
   Camera,
   Trash2,
   Clock,
   Loader2,
   Scale,
+  Wallet,
 } from "lucide-react";
 import { Card, Badge } from "./Card";
 import { getJSON, getSetting, setJSON, KEYS } from "../lib/storage";
@@ -29,6 +30,8 @@ import {
   DISCREPANCY_THRESHOLD_PCT,
   labelOf,
   transitionPickup,
+  confirmPayment,
+  PAYMENT_METHODS,
 } from "../lib/circularRecovery";
 
 export const INPUT =
@@ -58,8 +61,8 @@ export function fmtDate(isoDate) {
 
 const ACTOR_LABELS = { restoran: "Dapur Anda", mitra: "Mitra" };
 
-export function actorLabel(actor, simulated) {
-  return actor === "mitra" && simulated ? "Mitra (simulasi)" : ACTOR_LABELS[actor] ?? actor;
+export function actorLabel(actor) {
+  return ACTOR_LABELS[actor] ?? actor;
 }
 
 /** State catatan limbah & transaksi pickup, tersimpan di localStorage. */
@@ -92,6 +95,20 @@ export function useCircularData() {
     return null;
   }
 
+  /** Konfirmasi pembayaran mitra ke restoran. Return pesan error, atau null kalau berhasil. */
+  function payPickup(pickup, opts) {
+    let next;
+    try {
+      next = confirmPayment(pickup, opts);
+    } catch (e) {
+      return e.message;
+    }
+    if (!savePickups(pickups.map((p) => (p.id === pickup.id ? next : p)))) {
+      return "Gagal menyimpan ke penyimpanan browser.";
+    }
+    return null;
+  }
+
   return {
     records,
     pickups,
@@ -101,6 +118,7 @@ export function useCircularData() {
     savePickups,
     saveOrigin,
     updatePickupStatus,
+    payPickup,
   };
 }
 
@@ -122,7 +140,7 @@ export function useOperationalSignals() {
 }
 
 /** State modal detail pickup + handler transisi status dengan notifikasi. */
-export function usePickupDetail({ pickups, updatePickupStatus, notify }) {
+export function usePickupDetail({ pickups, updatePickupStatus, payPickup, notify }) {
   const [openId, setOpenId] = useState(null);
   const open = pickups.find((p) => p.id === openId) || null;
 
@@ -132,7 +150,13 @@ export function usePickupDetail({ pickups, updatePickupStatus, notify }) {
     return err;
   }
 
-  return { open, setOpenId, onTransition };
+  function onPay(pickup, opts) {
+    const err = payPickup(pickup, opts);
+    if (!err) notify("success", `Pembayaran ${fmtRp(pickup.payment.amount)} tercatat diterima.`);
+    return err;
+  }
+
+  return { open, setOpenId, onTransition, onPay };
 }
 
 export function useToast() {
@@ -174,23 +198,6 @@ export function Toast({ toast, onClose }) {
   );
 }
 
-export function SimulationNote({ children }) {
-  return (
-    <div className="flex items-start gap-3 bg-[#fff8e6] border border-[var(--color-gold-400)]/60 text-[#8a6300] rounded-xl px-4 py-3 text-sm">
-      <FlaskConical size={18} className="shrink-0 mt-0.5" />
-      <div>{children}</div>
-    </div>
-  );
-}
-
-export function SimBadge() {
-  return (
-    <Badge tone="gold">
-      <FlaskConical size={11} /> Simulasi
-    </Badge>
-  );
-}
-
 export function ErrorBox({ children }) {
   return (
     <div className="flex items-start gap-2 text-sm text-[#c0392b] bg-[#fdecec] rounded-xl px-4 py-2.5">
@@ -203,6 +210,19 @@ export function ErrorBox({ children }) {
 export function FieldError({ children }) {
   if (!children) return null;
   return <p className="text-xs text-[#c0392b] mt-1.5">{children}</p>;
+}
+
+export function PaymentBadge({ payment }) {
+  if (!payment) return null;
+  return payment.status === "dibayar" ? (
+    <Badge tone="leaf">
+      <Wallet size={11} /> Dibayar
+    </Badge>
+  ) : (
+    <Badge tone="gold">
+      <Wallet size={11} /> Menunggu pembayaran
+    </Badge>
+  );
 }
 
 export function PickupStatusBadge({ status }) {
@@ -386,12 +406,13 @@ function DetailRow({ label, children }) {
 
 /**
  * Detail transaksi pickup + riwayat status + aksi.
- * Aksi "mitra" dikelompokkan di panel simulasi karena belum ada integrasi mitra nyata.
+ * Aksi "mitra" dikelompokkan di panel terpisah (belum ada integrasi API mitra).
  */
-export function PickupDetailModal({ pickup, records, onClose, onTransition }) {
+export function PickupDetailModal({ pickup, records, onClose, onTransition, onPay }) {
   const [rejectNote, setRejectNote] = useState("");
   const [showReject, setShowReject] = useState(false);
   const [verify, setVerify] = useState({ actualKg: "", receiverName: "", note: "", photo: null });
+  const [pay, setPay] = useState({ method: PAYMENT_METHODS[0].id, reference: "" });
   const [error, setError] = useState("");
 
   const items = records.filter((r) => pickup.recordIds.includes(r.id));
@@ -400,6 +421,8 @@ export function PickupDetailModal({ pickup, records, onClose, onTransition }) {
   const partnerActions = actions.filter((a) => a.actor === "mitra");
   const v = pickup.verification;
   const estCost = pickup.tariff.transportFeeFlat + pickup.tariff.transportFeePerKg * (v?.actualKg ?? pickup.plannedKg);
+  const pricePerKg = pickup.tariff.pricePerKg || 0;
+  const payment = pickup.payment;
 
   function run(action) {
     setError("");
@@ -423,7 +446,6 @@ export function PickupDetailModal({ pickup, records, onClose, onTransition }) {
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <PickupStatusBadge status={pickup.status} />
         <PathwayDot pathway={pickup.pathway} />
-        {pickup.simulated && <SimBadge />}
         <span className="text-xs text-[var(--color-ink-400)] ml-auto font-mono">{pickup.id}</span>
       </div>
 
@@ -433,7 +455,11 @@ export function PickupDetailModal({ pickup, records, onClose, onTransition }) {
           {fmtDate(pickup.date)} · {pickup.slot}
         </DetailRow>
         <DetailRow label="Berat awal (tercatat)">{fmtKg(pickup.plannedKg)}</DetailRow>
-        <DetailRow label={v ? "Biaya pengelolaan" : "Estimasi biaya"}>{fmtRp(estCost)}</DetailRow>
+        <DetailRow label="Harga beli mitra">{pricePerKg > 0 ? `${fmtRp(pricePerKg)}/kg` : "Gratis (tidak dibeli)"}</DetailRow>
+        {!v && pricePerKg > 0 && (
+          <DetailRow label="Estimasi pendapatan">{fmtRp(pricePerKg * pickup.plannedKg)}</DetailRow>
+        )}
+        <DetailRow label={v ? "Biaya angkut" : "Estimasi biaya angkut"}>{estCost ? fmtRp(estCost) : "Gratis"}</DetailRow>
         <DetailRow label="Diajukan">{fmtDateTime(pickup.createdAt)}</DetailRow>
         {pickup.notes && <DetailRow label="Catatan">{pickup.notes}</DetailRow>}
       </dl>
@@ -478,6 +504,41 @@ export function PickupDetailModal({ pickup, records, onClose, onTransition }) {
         </div>
       )}
 
+      {v && (
+        <div className="mt-5 rounded-xl border border-leaf-100 p-4">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <Wallet size={16} className="text-[var(--color-leaf-500)]" />
+            <h4 className="text-sm font-bold text-[var(--color-forest-900)]">Pembayaran ke restoran</h4>
+            <PaymentBadge payment={payment} />
+          </div>
+          {payment ? (
+            <>
+              <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <DetailRow label="Berat dibayar">{fmtKg(v.actualKg)}</DetailRow>
+                <DetailRow label="Harga">{fmtRp(pricePerKg)}/kg</DetailRow>
+                <DetailRow label="Jumlah">{fmtRp(payment.amount)}</DetailRow>
+                <DetailRow label="Hasil bersih">{fmtRp(payment.amount - estCost)}</DetailRow>
+                {payment.paidAt && (
+                  <>
+                    <DetailRow label="Metode">{labelOf(PAYMENT_METHODS, payment.method)}</DetailRow>
+                    <DetailRow label="Dibayar">{fmtDateTime(payment.paidAt)}</DetailRow>
+                    {payment.reference && <DetailRow label="Referensi">{payment.reference}</DetailRow>}
+                  </>
+                )}
+              </dl>
+              <p className="text-xs text-[var(--color-ink-400)] mt-3">
+                Dihitung dari berat aktual yang diterima mitra × harga beli saat pengajuan.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-[var(--color-ink-600)]">
+              Mitra ini tidak membeli limbah tersebut — limbah diambil gratis
+              {estCost ? " (restoran membayar ongkos angkut)" : ""}.
+            </p>
+          )}
+        </div>
+      )}
+
       <h4 className="mt-5 mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-400)]">
         Riwayat status
       </h4>
@@ -486,9 +547,15 @@ export function PickupDetailModal({ pickup, records, onClose, onTransition }) {
           <li key={i} className="pl-4">
             <span className="absolute -left-[5px] mt-1.5 w-2.5 h-2.5 rounded-full bg-[var(--color-leaf-500)]" />
             <div className="flex flex-wrap items-center gap-2">
-              <PickupStatusBadge status={h.status} />
+              {h.type === "payment" ? (
+                <Badge tone="leaf">
+                  <Wallet size={11} /> Pembayaran
+                </Badge>
+              ) : (
+                <PickupStatusBadge status={h.status} />
+              )}
               <span className="text-xs text-[var(--color-ink-400)] inline-flex items-center gap-1">
-                <Clock size={11} /> {fmtDateTime(h.at)} · {actorLabel(h.actor, pickup.simulated)}
+                <Clock size={11} /> {fmtDateTime(h.at)} · {actorLabel(h.actor)}
               </span>
             </div>
             {h.note && <p className="text-xs text-[var(--color-ink-600)] mt-1">{h.note}</p>}
@@ -502,13 +569,61 @@ export function PickupDetailModal({ pickup, records, onClose, onTransition }) {
         </div>
       )}
 
+      {payment?.status === "menunggu" && onPay && (
+        <div className="mt-5 rounded-xl border border-dashed border-[var(--color-gold-400)] bg-[#fffbf0] p-4">
+          <p className="text-xs font-semibold text-[#8a6300] flex items-center gap-1.5">
+            <Handshake size={13} />
+            Konfirmasi pembayaran mitra
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className={LABEL} htmlFor="pay-method">
+                Metode pembayaran
+              </label>
+              <select
+                id="pay-method"
+                value={pay.method}
+                onChange={(e) => setPay({ ...pay, method: e.target.value })}
+                className={INPUT}
+              >
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={LABEL} htmlFor="pay-ref">
+                No. referensi (opsional)
+              </label>
+              <input
+                id="pay-ref"
+                value={pay.reference}
+                onChange={(e) => setPay({ ...pay, reference: e.target.value })}
+                placeholder="mis. TRX-0912"
+                className={INPUT}
+              />
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setError("");
+              const err = onPay(pickup, pay);
+              if (err) setError(err);
+            }}
+            className={`${BTN_PRIMARY} mt-4`}
+          >
+            <Wallet size={15} /> Konfirmasi pembayaran {fmtRp(payment.amount)}
+          </button>
+        </div>
+      )}
+
       {partnerActions.length > 0 && (
         <div className="mt-5 rounded-xl border border-dashed border-[var(--color-gold-400)] bg-[#fffbf0] p-4">
           <p className="text-xs font-semibold text-[#8a6300] flex items-center gap-1.5">
-            <FlaskConical size={13} />
-            {pickup.simulated
-              ? "Simulasi aksi mitra — belum ada integrasi dengan mitra sungguhan. Status ini tidak berarti pengambilan benar-benar terjadi."
-              : "Aksi mitra"}
+            <Handshake size={13} />
+            Aksi mitra
           </p>
 
           {partnerActions.some((a) => a.needsVerification) && (

@@ -12,6 +12,8 @@ import {
   createPickup,
   transitionPickup,
   computeCircularStats,
+  confirmPayment,
+  estimateTariff,
   recordStatusMap,
   nextPickupDate,
 } from "../src/lib/circularRecovery.js";
@@ -65,8 +67,12 @@ assert.deepEqual(validatePickupRequest(req), []);
 assert.ok(validatePickupRequest({ ...req, date: "2026-10-28" }).length); // hari ini
 assert.ok(validatePickupRequest({ ...req, date: "2026-10-31" }).length); // Sabtu
 
+// Pendapatan per kg (harga demo BSF Sanur: sayur & buah Rp400/kg, tanpa ongkos)
+assert.deepEqual(estimateTariff(sanur, [veg]), { income: 5000, cost: 0, net: 5000, pricePerKg: 400 });
+
 let pk = createPickup({ ...req, now });
 assert.equal(pk.status, "menunggu");
+assert.equal(pk.tariff.pricePerKg, 400);
 
 // Kapasitas terpakai oleh pickup aktif
 assert.equal(evaluatePartner(sanur, { records: [], pickups: [pk], origin: DEMO_KITCHEN_LOCATION }).remainingKg, 337.5);
@@ -89,6 +95,17 @@ pk = transitionPickup(pk, "diterima", { actor: "mitra", verification: { actualKg
 assert.equal(pk.verification.diffKg, -1.5);
 assert.equal(pk.verification.diffPct, -12);
 assert.equal(pk.history.length, 5);
+assert.deepEqual([pk.payment.amount, pk.payment.status], [4400, "menunggu"]); // 11 kg aktual x Rp400
+
+// Pembayaran belum dikonfirmasi -> masih "menunggu", belum masuk pendapatan diterima
+let paidStats = computeCircularStats([veg], [pk]);
+assert.deepEqual([paidStats.incomePaid, paidStats.incomePending], [0, 4400]);
+assert.throws(() => confirmPayment(pk, { method: "cek" }));
+const paid = confirmPayment(pk, { method: "transfer", reference: "TRX1", now });
+assert.equal(paid.payment.status, "dibayar");
+assert.throws(() => confirmPayment(paid, { method: "transfer" })); // tidak bisa dibayar dua kali
+paidStats = computeCircularStats([veg], [paid]);
+assert.deepEqual([paidStats.incomePaid, paidStats.incomePending, paidStats.netIncome], [4400, 0, 4400]);
 
 stats = computeCircularStats([veg, meaty], [pk]);
 assert.equal(stats.receivedKg, 11); // berat aktual, bukan berat awal
@@ -96,8 +113,8 @@ assert.equal(stats.totalRecordedKg, 25);
 assert.equal(stats.pendingKg, 12.5);
 assert.equal(stats.successRate, 100);
 assert.equal(stats.discrepancyCount, 1);
-assert.equal(stats.managementCost, 25000);
-assert.equal(stats.recoveredValue, null); // mitra tidak punya data nilai material
+assert.equal(stats.managementCost, 0);
+assert.equal(stats.incomePending, 4400);
 assert.equal(stats.receivedByPathway.find((p) => p.id === "bsf").value, 11);
 
 // Pickup dibatalkan membebaskan catatan limbah

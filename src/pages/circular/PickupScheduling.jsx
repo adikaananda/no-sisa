@@ -5,9 +5,8 @@ import {
   useCircularData,
   useToast,
   Toast,
-  SimulationNote,
-  SimBadge,
   PickupStatusBadge,
+  PaymentBadge,
   PickupDetailModal,
   usePickupDetail,
   PathwayDot,
@@ -41,7 +40,7 @@ export default function PickupScheduling({ onNavigate, params }) {
   const data = useCircularData();
   const { records, pickups, partners, origin, savePickups } = data;
   const { toast, notify, clear } = useToast();
-  const detail = usePickupDetail({ pickups, updatePickupStatus: data.updatePickupStatus, notify });
+  const detail = usePickupDetail({ pickups, updatePickupStatus: data.updatePickupStatus, payPickup: data.payPickup, notify });
 
   const status = recordStatusMap(records, pickups);
   const ready = records.filter((r) => status[r.id] === "belum" && analyzeWasteRules(r).sufficient);
@@ -91,7 +90,7 @@ export default function PickupScheduling({ onNavigate, params }) {
       return;
     }
     resetForm();
-    notify("success", `Permintaan dibuat — menunggu konfirmasi ${partner.simulated ? "mitra (simulasi)" : "mitra"}.`);
+    notify("success", "Permintaan dibuat — menunggu konfirmasi mitra.");
     detail.setOpenId(pickup.id);
   }
 
@@ -109,14 +108,9 @@ export default function PickupScheduling({ onNavigate, params }) {
           records={records}
           onClose={() => detail.setOpenId(null)}
           onTransition={detail.onTransition}
+          onPay={detail.onPay}
         />
       )}
-
-      <SimulationNote>
-        Belum ada integrasi dengan mitra sungguhan. Permintaan dikirim ke <b>mitra demo</b>; aksi mitra (terima, tolak,
-        jadwal, konfirmasi penerimaan) disimulasikan di detail transaksi dan tidak berarti pengambilan benar-benar
-        terjadi.
-      </SimulationNote>
 
       {showForm ? (
         <Card className="p-6 sm:p-8">
@@ -230,7 +224,8 @@ export default function PickupScheduling({ onNavigate, params }) {
                   Total: <b>{fmtKg(evaluation.totalKg)}</b>
                 </span>
                 <span>
-                  Estimasi biaya: <b>{fmtRp(evaluation.tariff.cost)}</b>
+                  Est. pendapatan: <b>{fmtRp(evaluation.tariff.income)}</b> − angkut {fmtRp(evaluation.tariff.cost)} = bersih{" "}
+                  <b>{fmtRp(evaluation.tariff.net)}</b>
                 </span>
                 <span>
                   Jarak: <b>{evaluation.distanceKm} km</b>
@@ -315,7 +310,7 @@ export default function PickupScheduling({ onNavigate, params }) {
                     {fmtKg(p.verification?.actualKg ?? p.plannedKg)}
                   </span>
                   <PickupStatusBadge status={p.status} />
-                  {p.simulated && <SimBadge />}
+                  <PaymentBadge payment={p.payment} />
                   <ChevronRight size={16} className="text-[var(--color-ink-400)]" />
                 </button>
               </li>
