@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Navigation, Loader2, CalendarDays, Truck, CheckCircle2, AlertTriangle, Handshake, Coins } from "lucide-react";
+import { HeartHandshake, MapPin, Navigation, Loader2, CalendarDays, Truck, CheckCircle2, AlertTriangle, Handshake, Coins } from "lucide-react";
 import { Card, SectionHeading } from "../../components/Card";
 import {
   useCircularData,
@@ -166,16 +166,16 @@ export default function PartnerNetwork({ onNavigate, params }) {
           <EmptyState icon={Handshake} title="Tidak ada mitra di kategori ini" />
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {matches.map((m) => (
-            <PartnerCard
-              key={m.partner.id}
-              match={m}
-              hasSelection={selected.length > 0}
-              onRequest={() => onNavigate("cr-pickups", { partnerId: m.partner.id, recordIds: selected.map((r) => r.id) })}
-            />
-          ))}
-        </div>
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {matches.map((m) => (
+              <PartnerCard
+                key={m.partner.id}
+                match={m}
+                hasSelection={selected.length > 0}
+                onRequest={() => onNavigate("cr-pickups", { partnerId: m.partner.id, recordIds: selected.map((r) => r.id) })}
+              />
+            ))}
+          </div>
       )}
     </div>
   );
@@ -231,6 +231,17 @@ function PartnerCard({ match, hasSelection, onRequest }) {
         </div>
       </dl>
 
+      {p.type === "donasi" ? (
+        <div className="mt-4 rounded-xl bg-[#fff8e6] p-3">
+          <p className="text-xs font-semibold text-[var(--color-forest-900)] flex items-center gap-1.5">
+            <HeartHandshake size={13} className="text-[#a67c00]" /> Donasi pangan
+          </p>
+          <p className="text-xs text-[var(--color-ink-600)] mt-1">
+            Makanan disalurkan ke penerima manfaat — tanpa biaya dan tanpa bayaran.
+            {p.sameDay && " Bisa diambil hari ini."}
+          </p>
+        </div>
+      ) : (
       <div className="mt-4 rounded-xl bg-leaf-50 p-3">
         <p className="text-xs font-semibold text-[var(--color-forest-900)] flex items-center gap-1.5">
           <Coins size={13} className="text-[var(--color-leaf-500)]" /> Harga beli per kg
@@ -261,6 +272,7 @@ function PartnerCard({ match, hasSelection, onRequest }) {
           </div>
         )}
       </div>
+      )}
 
       <p className="text-xs text-[var(--color-ink-400)] mt-4">
         Menerima: {p.accepts.map((c) => labelOf(WASTE_CATEGORIES, c).toLowerCase()).join(", ")}

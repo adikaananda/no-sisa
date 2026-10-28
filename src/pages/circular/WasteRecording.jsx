@@ -22,6 +22,7 @@ import {
   WASTE_SOURCES,
   WEIGHT_METHODS,
   CONTAMINATION,
+  STORAGE_CONDITIONS,
   WASTE_FLAGS,
   RECORD_STATUSES,
   labelOf,
@@ -44,6 +45,8 @@ const emptyForm = () => ({
   source: "",
   sourceRef: "",
   contamination: "",
+  storage: "",
+  safeUntil: "",
   flags: [],
   noSpecialFlags: false,
   notes: "",
@@ -97,7 +100,7 @@ export default function WasteRecording({ onNavigate }) {
     setForm(emptyForm());
     setErrors({});
     setLastSavedId(record.id);
-    notify("success", `Limbah ${fmtKg(record.weightKg)} berhasil dicatat.`);
+    notify("success", `Catatan ${fmtKg(record.weightKg)} berhasil disimpan.`);
   }
 
   function handleDelete(r) {
@@ -123,7 +126,7 @@ export default function WasteRecording({ onNavigate }) {
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <fieldset>
               <legend className={LABEL}>Kategori limbah</legend>
-              <div className="grid sm:grid-cols-3 gap-2">
+              <div className="grid sm:grid-cols-2 gap-2">
                 {WASTE_CATEGORIES.map((c) => (
                   <label
                     key={c.id}
@@ -220,25 +223,69 @@ export default function WasteRecording({ onNavigate }) {
               </div>
             </div>
 
-            <div>
-              <label className={LABEL} htmlFor="wr-contamination">
-                Status pemilahan
-              </label>
-              <select
-                id="wr-contamination"
-                value={form.contamination}
-                onChange={(e) => set({ contamination: e.target.value })}
-                className={INPUT}
-              >
-                <option value="">Pilih status...</option>
-                {CONTAMINATION.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              <FieldError>{errors.contamination}</FieldError>
-            </div>
+            {form.category === "layak_konsumsi" ? (
+              <div className="rounded-xl border border-leaf-100 bg-leaf-50/50 p-4">
+                <p className="text-sm font-semibold text-[var(--color-forest-900)]">Keamanan pangan</p>
+                <p className="text-xs text-[var(--color-ink-400)] mt-0.5 mb-3">
+                  Untuk makanan yang belum disajikan ke pelanggan dan masih aman dimakan — bisa didonasikan.
+                </p>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={LABEL} htmlFor="wr-storage">
+                      Kondisi penyimpanan
+                    </label>
+                    <select
+                      id="wr-storage"
+                      value={form.storage}
+                      onChange={(e) => set({ storage: e.target.value })}
+                      className={INPUT}
+                    >
+                      <option value="">Pilih kondisi...</option>
+                      {STORAGE_CONDITIONS.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                    <FieldError>{errors.storage}</FieldError>
+                  </div>
+                  <div>
+                    <label className={LABEL} htmlFor="wr-safe">
+                      Batas aman konsumsi
+                    </label>
+                    <input
+                      id="wr-safe"
+                      type="datetime-local"
+                      value={form.safeUntil}
+                      min={form.recordedAt}
+                      onChange={(e) => set({ safeUntil: e.target.value })}
+                      className={INPUT}
+                    />
+                    <FieldError>{errors.safeUntil}</FieldError>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className={LABEL} htmlFor="wr-contamination">
+                  Status pemilahan
+                </label>
+                <select
+                  id="wr-contamination"
+                  value={form.contamination}
+                  onChange={(e) => set({ contamination: e.target.value })}
+                  className={INPUT}
+                >
+                  <option value="">Pilih status...</option>
+                  {CONTAMINATION.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <FieldError>{errors.contamination}</FieldError>
+              </div>
+            )}
 
             <fieldset>
               <legend className={LABEL}>Karakteristik material</legend>

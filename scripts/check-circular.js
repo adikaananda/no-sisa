@@ -121,4 +121,42 @@ assert.equal(stats.receivedByPathway.find((p) => p.id === "bsf").value, 11);
 const cancelled = transitionPickup(createPickup({ ...req, records: [meaty], now }), "dibatalkan", { actor: "restoran", now });
 assert.equal(recordStatusMap([meaty], [cancelled])[meaty.id], "belum");
 
+// Makanan berlebih layak konsumsi -> donasi jadi jalur utama
+const surplusInput = { ...base, category: "layak_konsumsi", contamination: "", storage: "dingin", safeUntil: "2026-10-28T20:00", weightKg: "6" };
+assert.deepEqual(validateWasteRecord(surplusInput, now), {});
+assert.ok(validateWasteRecord({ ...surplusInput, safeUntil: "" }, now).safeUntil);
+assert.ok(validateWasteRecord({ ...surplusInput, storage: "" }, now).storage);
+const surplus = createWasteRecord(surplusInput, now);
+assert.equal(surplus.contamination, "bersih");
+const a3 = analyzeWasteRules(surplus, now);
+assert.equal(a3.recommendations[0].pathway, "donasi");
+assert.equal(a3.recommendations[0].suitability, "sesuai");
+// Lewat batas aman -> donasi tidak disarankan
+const late = analyzeWasteRules(surplus, new Date(2026, 9, 28, 21, 0));
+assert.equal(late.recommendations.find((r) => r.pathway === "donasi").suitability, "tidak disarankan");
+// Sisa sayur bukan untuk donasi, tapi cocok untuk pakan
+assert.equal(analyzeWasteRules(veg).recommendations.find((r) => r.pathway === "donasi").suitability, "tidak disarankan");
+assert.equal(analyzeWasteRules(veg).recommendations.find((r) => r.pathway === "pakan").suitability, "sesuai");
+
+// Mitra donasi: bisa ambil hari ini, gratis, dan tanggal tidak boleh lewat batas aman
+const bank = DEMO_PARTNERS.find((p) => p.id === "donasi-renon");
+assert.equal(nextPickupDate(bank, now), "2026-10-28");
+const donReq = { partner: bank, records: [surplus], date: "2026-10-28", slot: bank.timeSlots[1], origin: DEMO_KITCHEN_LOCATION, today: now };
+assert.deepEqual(validatePickupRequest(donReq), []);
+assert.ok(validatePickupRequest({ ...donReq, date: "2026-10-29" }).some((e) => e.includes("batas aman")));
+// Batas aman jam 18.00, slot 19.00 di hari yang sama -> ditolak
+const earlyLimit = { ...surplus, safeUntil: new Date(2026, 9, 28, 18, 0).toISOString() };
+assert.ok(validatePickupRequest({ ...donReq, records: [earlyLimit] }).some((e) => e.includes("batas aman")));
+assert.ok(validatePickupRequest({ ...donReq, slot: bank.timeSlots[0] }).some((e) => e.includes("sudah lewat"))); // 10.00 < jam 10.00 sekarang
+// Semua slot hari ini lewat -> jadwal terdekat besok
+assert.equal(nextPickupDate(bank, new Date(2026, 9, 28, 21, 30)), "2026-10-29");
+assert.equal(evaluatePartner(bank, { records: [veg], origin: DEMO_KITCHEN_LOCATION }).eligible, false); // tidak terima sisa sayur
+const donation = createPickup({ ...donReq, now });
+assert.equal(donation.tariff.pricePerKg, 0);
+
+// Pengolah pakan membeli per kg
+const pakan = DEMO_PARTNERS.find((p) => p.id === "pakan-abiansemal");
+assert.equal(estimateTariff(pakan, [veg]).income, 4375); // 12,5 kg x Rp350
+assert.equal(evaluatePartner(pakan, { records: [meaty], origin: DEMO_KITCHEN_LOCATION }).eligible, false); // tolak daging
+
 console.log("circularRecovery: semua cek lulus");

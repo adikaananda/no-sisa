@@ -279,7 +279,7 @@ export async function analyzeWasteRecovery({ apiKey, model, record, ruleAnalysis
         items: {
           type: "OBJECT",
           properties: {
-            pathway: { type: "STRING", enum: ["bsf", "kompos", "biogas"] },
+            pathway: { type: "STRING", enum: ["donasi", "pakan", "bsf", "kompos", "biogas"] },
             suitability: { type: "STRING", enum: ["sesuai", "bersyarat", "tidak disarankan"] },
             reason: { type: "STRING" },
             requirements_to_verify: { type: "ARRAY", items: { type: "STRING" } },
@@ -298,13 +298,17 @@ export async function analyzeWasteRecovery({ apiKey, model, record, ruleAnalysis
     .map((p) => `- ${p.name} (${p.type}; menerima: ${p.accepts.join(", ")}; syarat: ${p.requirements.join("; ")})`)
     .join("\n");
 
-  const prompt = `Kamu adalah AI Waste Analyst untuk modul "Circular Recovery" di platform "No Sisa" — menyalurkan food waste dapur komersial ke mitra pengolah (maggot Black Soldier Fly, pengomposan, biogas).
+  const prompt = `Kamu adalah AI Waste Analyst untuk modul "Circular Recovery" di platform "No Sisa" — menyalurkan food waste dapur komersial ke penerima: donasi pangan (bank pangan/lembaga donasi, khusus makanan berlebih yang masih layak konsumsi), pengolah pakan ternak, maggot Black Soldier Fly, pengomposan, dan biogas.
 
 Data limbah (dicatat pengguna; berat dari ${record.weightMethod === "timbangan" ? "timbangan" : "input manual staf"}):
 - Kategori: ${record.category}
 - Berat: ${record.weightKg} kg
 - Sumber: ${record.source}${record.sourceRef ? ` (${record.sourceRef})` : ""}
-- Status pemilahan: ${record.contamination}
+- Status pemilahan: ${record.contamination}${
+    record.category === "layak_konsumsi"
+      ? `\n- Penyimpanan: ${record.storage}\n- Batas aman konsumsi: ${new Date(record.safeUntil).toLocaleString("id-ID")}`
+      : ""
+  }
 - Karakteristik: ${record.flags.length ? record.flags.join(", ") : record.noSpecialFlags ? "tidak ada karakteristik khusus" : "belum diisi"}
 - Catatan: ${record.notes || "(tidak ada)"}
 
@@ -318,7 +322,7 @@ Konteks operasional dapur (data yang tersedia di No Sisa):
 ${operationalContext || "(tidak ada)"}
 
 Tugas kamu:
-1. Nilai kecocokan tiap jalur (bsf, kompos, biogas): "sesuai", "bersyarat", atau "tidak disarankan", dengan alasan singkat berdasarkan kategori, berat, dan karakteristik material.
+1. Nilai kecocokan tiap jalur (donasi, pakan, bsf, kompos, biogas). Donasi HANYA untuk makanan layak konsumsi yang belum disajikan dan belum melewati batas aman; ikuti hierarki pemulihan pangan (manusia > pakan > energi > kompos). Beri label "sesuai", "bersyarat", atau "tidak disarankan", dengan alasan singkat berdasarkan kategori, berat, dan karakteristik material.
 2. Untuk tiap jalur, tulis persyaratan yang HARUS diverifikasi ke mitra sebelum penyaluran. Jangan pernah menyatakan limbah PASTI cocok — keputusan akhir mengikuti persyaratan mitra pengolah.
 3. Jika data tidak cukup untuk menilai dengan aman, set data_sufficient = false dan isi missing_info dengan informasi yang perlu dilengkapi pengguna.
 4. handling_tips: 2-3 tips penanganan sebelum pengambilan (pemilahan, penyimpanan, penirisan).

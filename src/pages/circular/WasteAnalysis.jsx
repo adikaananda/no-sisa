@@ -34,6 +34,7 @@ import {
   WASTE_SOURCES,
   WEIGHT_METHODS,
   CONTAMINATION,
+  STORAGE_CONDITIONS,
   WASTE_FLAGS,
   RECORD_STATUSES,
   labelOf,
@@ -244,24 +245,37 @@ function AnalysisPanel({ record, analysis, recordStatus, onUpdate, onAi, aiLoadi
         <div className="rounded-xl border border-leaf-100 bg-leaf-50/50 p-4">
           <p className="text-sm font-semibold text-[var(--color-forest-900)] mb-3">Karakteristik & pemilahan</p>
           <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className={LABEL} htmlFor="an-contamination">
-                Status pemilahan
-              </label>
-              <select
-                id="an-contamination"
-                value={draft.contamination}
-                disabled={!editable}
-                onChange={(e) => setDraft({ ...draft, contamination: e.target.value })}
-                className={INPUT}
-              >
-                {CONTAMINATION.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {record.category === "layak_konsumsi" ? (
+              <dl className="space-y-3 text-sm">
+                <div>
+                  <dt className="text-xs text-[var(--color-ink-400)]">Penyimpanan</dt>
+                  <dd className="font-semibold text-[var(--color-forest-900)]">{labelOf(STORAGE_CONDITIONS, record.storage)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-[var(--color-ink-400)]">Batas aman konsumsi</dt>
+                  <dd className="font-semibold text-[var(--color-forest-900)]">{fmtDateTime(record.safeUntil)}</dd>
+                </div>
+              </dl>
+            ) : (
+              <div>
+                <label className={LABEL} htmlFor="an-contamination">
+                  Status pemilahan
+                </label>
+                <select
+                  id="an-contamination"
+                  value={draft.contamination}
+                  disabled={!editable}
+                  onChange={(e) => setDraft({ ...draft, contamination: e.target.value })}
+                  className={INPUT}
+                >
+                  {CONTAMINATION.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="space-y-1.5">
               {WASTE_FLAGS.map((f) => (
                 <label key={f.id} className="flex items-center gap-2 text-sm text-[var(--color-ink-600)]">

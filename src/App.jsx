@@ -60,7 +60,7 @@ const PAGES = {
   },
   "cr-partners": {
     title: "Partner Network",
-    subtitle: "Cocokkan limbah dengan mitra maggot BSF, kompos, dan biogas",
+    subtitle: "Cocokkan dengan bank pangan, pengolah pakan, maggot BSF, kompos, dan biogas",
     Component: PartnerNetwork,
   },
   "cr-pickups": {

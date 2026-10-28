@@ -15,6 +15,7 @@
 // ============================================================
 
 export const WASTE_CATEGORIES = [
+  { id: "layak_konsumsi", label: "Makanan berlebih layak konsumsi" },
   { id: "sayur_buah", label: "Sisa sayuran & buah" },
   { id: "nasi_pati", label: "Sisa nasi & makanan berpati" },
   { id: "campuran", label: "Limbah organik campuran" },
@@ -39,6 +40,13 @@ export const CONTAMINATION = [
   { id: "belum_dicek", label: "Belum dicek" },
 ];
 
+// Khusus makanan berlebih layak konsumsi (syarat keamanan pangan untuk donasi)
+export const STORAGE_CONDITIONS = [
+  { id: "suhu_ruang", label: "Suhu ruang" },
+  { id: "dingin", label: "Dingin (kulkas ≤5°C)" },
+  { id: "beku", label: "Beku (freezer)" },
+];
+
 // Karakteristik material yang memengaruhi kecocokan jalur pengolahan
 export const WASTE_FLAGS = [
   { id: "daging_ikan", label: "Mengandung daging / ikan / tulang" },
@@ -49,13 +57,16 @@ export const WASTE_FLAGS = [
 ];
 
 export const PATHWAYS = {
+  donasi: { label: "Donasi pangan", color: "var(--color-gold-400)" },
+  pakan: { label: "Pengolah pakan", color: "#8a6300" },
   bsf: { label: "Maggot BSF", color: "var(--color-forest-900)" },
   biogas: { label: "Biogas", color: "var(--color-amber-500)" },
   kompos: { label: "Pengomposan", color: "var(--color-leaf-500)" },
 };
 
-// Urutan hierarki pemulihan pangan: pakan (BSF) > energi (biogas) > kompos
-export const PATHWAY_ORDER = ["bsf", "biogas", "kompos"];
+// Urutan hierarki pemulihan pangan: manusia (donasi) > pakan ternak > pakan
+// serangga (BSF) > energi (biogas) > kompos
+export const PATHWAY_ORDER = ["donasi", "pakan", "bsf", "biogas", "kompos"];
 
 export const SUITABILITY = {
   sesuai: { label: "Sesuai", tone: "leaf", rank: 0 },
@@ -246,6 +257,101 @@ export const DEMO_PARTNERS = [
     transportFeePerKg: 0,
     pricePerKg: {},
   },
+  {
+    id: "donasi-renon",
+    name: "Bank Pangan Komunitas Renon",
+    type: "donasi",
+    area: "Renon, Denpasar",
+    lat: -8.6786,
+    lng: 115.2343,
+    accepts: ["layak_konsumsi"],
+    rejectFlags: [],
+    requirements: [
+      "Makanan belum disajikan atau disentuh pelanggan",
+      "Dikemas tertutup dan diberi label nama menu & waktu masak",
+      "Lauk hewani/olahan susu disimpan dingin sampai diambil",
+      "Diserahkan sebelum batas aman konsumsi",
+    ],
+    capacityKgPerWeek: 300,
+    minPickupKg: 2,
+    serviceRadiusKm: 15,
+    pickupDays: [0, 1, 2, 3, 4, 5, 6],
+    sameDay: true,
+    timeSlots: ["10.00–12.00", "19.00–21.00"],
+    transportFeeFlat: 0,
+    transportFeePerKg: 0,
+    pricePerKg: {},
+  },
+  {
+    id: "donasi-kuta",
+    name: "Lembaga Donasi Pangan Kuta",
+    type: "donasi",
+    area: "Kuta, Badung",
+    lat: -8.718,
+    lng: 115.1686,
+    accepts: ["layak_konsumsi"],
+    rejectFlags: ["susu"],
+    requirements: [
+      "Makanan belum disajikan atau disentuh pelanggan",
+      "Tidak menerima olahan susu",
+      "Dikemas per porsi atau dalam wadah food grade tertutup",
+    ],
+    capacityKgPerWeek: 150,
+    minPickupKg: 1,
+    serviceRadiusKm: 20,
+    pickupDays: [1, 2, 3, 4, 5, 6],
+    sameDay: true,
+    timeSlots: ["13.00–15.00", "20.00–22.00"],
+    transportFeeFlat: 0,
+    transportFeePerKg: 0,
+    pricePerKg: {},
+  },
+  {
+    id: "pakan-abiansemal",
+    name: "Pengolah Pakan Ternak Abiansemal",
+    type: "pakan",
+    area: "Abiansemal, Badung",
+    lat: -8.5167,
+    lng: 115.2167,
+    accepts: ["layak_konsumsi", "sayur_buah", "nasi_pati"],
+    rejectFlags: ["daging_ikan", "susu", "asin_pedas"],
+    requirements: [
+      "Hanya bahan nabati (sayur, buah, nasi, umbi)",
+      "Tidak menerima makanan asin/berbumbu tinggi",
+      "Bebas plastik, kemasan, dan benda asing",
+    ],
+    capacityKgPerWeek: 700,
+    minPickupKg: 20,
+    serviceRadiusKm: 35,
+    pickupDays: [1, 3, 5],
+    timeSlots: ["08.00–10.00"],
+    transportFeeFlat: 0,
+    transportFeePerKg: 0,
+    pricePerKg: { layak_konsumsi: 450, sayur_buah: 350, nasi_pati: 450 },
+  },
+  {
+    id: "pakan-blahbatuh",
+    name: "Pengolahan Pakan Terpadu Blahbatuh",
+    type: "pakan",
+    area: "Blahbatuh, Gianyar",
+    lat: -8.555,
+    lng: 115.301,
+    accepts: ["layak_konsumsi", "sayur_buah", "nasi_pati", "campuran"],
+    rejectFlags: [],
+    requirements: [
+      "Bahan hewani diolah dengan pemanasan sesuai ketentuan pakan",
+      "Bebas plastik, tulang besar, dan benda asing",
+      "Minyak jelantah tidak dicampurkan",
+    ],
+    capacityKgPerWeek: 1000,
+    minPickupKg: 25,
+    serviceRadiusKm: 40,
+    pickupDays: [2, 4, 6],
+    timeSlots: ["09.00–11.00", "14.00–16.00"],
+    transportFeeFlat: 20000,
+    transportFeePerKg: 0,
+    pricePerKg: { layak_konsumsi: 400, sayur_buah: 300, nasi_pati: 400, campuran: 200 },
+  },
 ];
 
 export function labelOf(list, id) {
@@ -273,7 +379,14 @@ export function validateWasteRecord(input, now = new Date()) {
   if (!at || Number.isNaN(at.getTime())) errors.recordedAt = "Isi waktu pencatatan.";
   else if (at.getTime() > now.getTime() + 5 * 60 * 1000) errors.recordedAt = "Waktu pencatatan tidak boleh di masa depan.";
   if (!WASTE_SOURCES.some((s) => s.id === input.source)) errors.source = "Pilih sumber limbah.";
-  if (!CONTAMINATION.some((c) => c.id === input.contamination)) errors.contamination = "Pilih status pemilahan.";
+  if (input.category === "layak_konsumsi") {
+    if (!STORAGE_CONDITIONS.some((c) => c.id === input.storage)) errors.storage = "Pilih kondisi penyimpanan.";
+    const until = input.safeUntil ? new Date(input.safeUntil) : null;
+    if (!until || Number.isNaN(until.getTime())) errors.safeUntil = "Isi batas aman konsumsi.";
+    else if (at && until <= at) errors.safeUntil = "Batas aman konsumsi harus setelah waktu pencatatan.";
+  } else if (!CONTAMINATION.some((c) => c.id === input.contamination)) {
+    errors.contamination = "Pilih status pemilahan.";
+  }
   return errors;
 }
 
@@ -286,7 +399,10 @@ export function createWasteRecord(input, now = new Date()) {
     recordedAt: new Date(input.recordedAt).toISOString(),
     source: input.source,
     sourceRef: input.sourceRef || "",
-    contamination: input.contamination,
+    // Makanan layak konsumsi tidak tercampur sampah; kemasannya bagian dari penyajian
+    contamination: input.category === "layak_konsumsi" ? "bersih" : input.contamination,
+    storage: input.category === "layak_konsumsi" ? input.storage : null,
+    safeUntil: input.category === "layak_konsumsi" ? new Date(input.safeUntil).toISOString() : null,
     flags: input.flags || [],
     noSpecialFlags: !!input.noSpecialFlags,
     notes: (input.notes || "").trim(),
@@ -300,18 +416,34 @@ export function createWasteRecord(input, now = new Date()) {
 // Aturan umum pengolahan limbah organik. Hasilnya rekomendasi awal —
 // keputusan akhir tetap mengikuti persyaratan tiap mitra pengolah.
 
+const NOT_FOR_DONATION = ["tidak disarankan", "Sisa/limbah bukan makanan siap konsumsi — tidak untuk didonasikan."];
+const PRIORITIZE_DONATION = "Masih layak konsumsi manusia — utamakan donasi; jalur ini dipakai jika donasi tidak memungkinkan.";
+
 const BASE_RULES = {
+  layak_konsumsi: {
+    donasi: ["sesuai", "Makanan berlebih yang belum disajikan masih bisa dimakan — prioritas tertinggi hierarki pemulihan pangan."],
+    pakan: ["bersyarat", PRIORITIZE_DONATION],
+    bsf: ["bersyarat", PRIORITIZE_DONATION],
+    biogas: ["bersyarat", PRIORITIZE_DONATION],
+    kompos: ["bersyarat", PRIORITIZE_DONATION],
+  },
   sayur_buah: {
+    donasi: NOT_FOR_DONATION,
+    pakan: ["sesuai", "Sisa sayur & buah umum diolah menjadi pakan ternak."],
     bsf: ["sesuai", "Material lunak berkadar air tinggi, mudah dikonsumsi larva BSF."],
     biogas: ["sesuai", "Mudah terurai secara anaerob di digester."],
     kompos: ["sesuai", "Bahan hijau (kaya nitrogen) yang umum untuk kompos."],
   },
   nasi_pati: {
+    donasi: NOT_FOR_DONATION,
+    pakan: ["sesuai", "Nasi & pati dapat dikeringkan menjadi pakan sumber energi."],
     bsf: ["sesuai", "Karbohidrat tinggi menjadi sumber energi pakan larva."],
     biogas: ["sesuai", "Kandungan pati tinggi berpotensi menghasilkan gas yang baik."],
     kompos: ["bersyarat", "Nasi cepat berjamur dan menarik hama; perlu dicampur bahan cokelat kering."],
   },
   campuran: {
+    donasi: NOT_FOR_DONATION,
+    pakan: ["bersyarat", "Komposisi campuran perlu dicek terhadap daftar bahan yang diterima pengolah pakan."],
     bsf: ["bersyarat", "Komposisi bervariasi — perlu dicocokkan dengan batas bahan yang diterima mitra."],
     biogas: ["bersyarat", "Umumnya dapat diolah, tetapi komposisi perlu dicek agar digester stabil."],
     kompos: ["bersyarat", "Komposisi bervariasi — kompos terbuka sensitif terhadap protein & lemak."],
@@ -321,30 +453,49 @@ const BASE_RULES = {
 // "syarat" = turunkan maksimal ke bersyarat; "hindari" = tidak disarankan
 const FLAG_RULES = {
   daging_ikan: {
+    donasi: ["syarat", "Lauk daging/ikan wajib dijaga rantai dinginnya sampai diterima lembaga donasi."],
+    pakan: ["syarat", "Bahan hewani untuk pakan wajib diolah (dipanaskan) sesuai ketentuan pengolah & regulasi pakan."],
     bsf: ["syarat", "Daging/ikan memicu bau dan lalat lain; banyak budidaya BSF membatasi porsinya."],
     biogas: ["syarat", "Protein dapat diolah, tetapi tulang besar harus dipisahkan."],
     kompos: ["hindari", "Daging/ikan tidak disarankan untuk kompos terbuka (bau, hama, patogen) kecuali sistem tertutup/termofilik."],
   },
   susu: {
+    donasi: ["syarat", "Olahan susu mudah basi — wajib disimpan dingin."],
+    pakan: ["syarat", "Olahan susu mudah basi — pastikan pengolah pakan menerimanya."],
     bsf: ["syarat", "Olahan susu perlu dibatasi agar media larva tidak terlalu asam/berbau."],
     kompos: ["hindari", "Olahan susu tidak disarankan untuk kompos terbuka (bau & hama)."],
   },
   minyak_santan: {
+    donasi: ["syarat", "Makanan bersantan cepat basi — salurkan secepatnya."],
+    pakan: ["syarat", "Lemak tinggi dibatasi dalam formulasi pakan."],
     bsf: ["syarat", "Minyak/santan berlebih dapat menurunkan kualitas media larva."],
     biogas: ["syarat", "Lemak dalam porsi besar dapat mengganggu stabilitas digester."],
     kompos: ["syarat", "Lemak memperlambat dekomposisi dan menarik hama."],
   },
   asin_pedas: {
+    pakan: ["syarat", "Garam tinggi berbahaya bagi ternak — ikuti batas pengolah pakan."],
     bsf: ["syarat", "Kadar garam tinggi dapat menghambat pertumbuhan larva."],
     kompos: ["syarat", "Garam tinggi menurunkan kualitas kompos."],
   },
   cair: {
+    pakan: ["syarat", "Perlu ditiriskan sebelum diolah menjadi pakan."],
     bsf: ["syarat", "Kuah/cairan perlu ditiriskan agar media tidak terlalu basah."],
     kompos: ["syarat", "Terlalu basah — perlu ditiriskan dan dicampur bahan kering."],
   },
 };
 
 const PATHWAY_REQUIREMENTS = {
+  donasi: [
+    "Makanan belum disajikan atau disentuh pelanggan",
+    "Disimpan pada suhu aman, dikemas tertutup, dan diberi label waktu masak",
+    "Diserahkan sebelum batas aman konsumsi",
+    "Ikuti ketentuan keamanan pangan lembaga penerima",
+  ],
+  pakan: [
+    "Bebas plastik, kemasan, tulang besar, dan benda asing",
+    "Sesuai daftar bahan yang diterima pengolah pakan",
+    "Bahan hewani hanya jika pengolah punya proses pemanasan sesuai ketentuan",
+  ],
   bsf: [
     "Bebas plastik, kemasan, tisu, dan tusuk sate",
     "Belum busuk berat atau berjamur parah",
@@ -362,8 +513,11 @@ const PATHWAY_REQUIREMENTS = {
   ],
 };
 
-export function analyzeWasteRules(record) {
+export function analyzeWasteRules(record, now = new Date()) {
   const gaps = [];
+  const edible = record.category === "layak_konsumsi";
+  if (edible && !record.storage) gaps.push("Isi kondisi penyimpanan makanan (suhu ruang, dingin, atau beku).");
+  if (edible && !record.safeUntil) gaps.push("Isi batas aman konsumsi makanan.");
   if (!(record.weightKg > 0)) gaps.push("Isi berat limbah (kg) dari timbangan atau input staf.");
   if (record.contamination === "belum_dicek") {
     gaps.push("Cek apakah limbah masih tercampur plastik, kemasan, atau tisu.");
@@ -394,6 +548,11 @@ export function analyzeWasteRules(record) {
       reasons.push(note);
       if (effect === "hindari") suitability = "tidak disarankan";
       else if (suitability === "sesuai") suitability = "bersyarat";
+    }
+
+    if (pathway === "donasi" && edible && new Date(record.safeUntil) <= now) {
+      suitability = "tidak disarankan";
+      reasons.push("Sudah melewati batas aman konsumsi — tidak boleh didonasikan.");
     }
 
     if (record.contamination === "ada_kemasan") {
@@ -429,12 +588,37 @@ function parseISODate(s) {
 
 export function isPickupDateAllowed(partner, isoDate, today = new Date()) {
   const d = parseISODate(isoDate);
-  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-  return d >= tomorrow && partner.pickupDays.includes(d.getDay());
+  const earliest = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (partner.sameDay ? 0 : 1));
+  return d >= earliest && partner.pickupDays.includes(d.getDay());
+}
+
+// Jam mulai slot, mis. "19.00–21.00" -> 19*60
+function slotStartMinutes(slot) {
+  const [h, m] = slot.split("–")[0].split(".").map(Number);
+  return h * 60 + (m || 0);
+}
+
+/** Waktu mulai pengambilan dari tanggal + slot. */
+export function pickupStart(isoDate, slot) {
+  const d = parseISODate(isoDate);
+  d.setMinutes(slotStartMinutes(slot));
+  return d;
+}
+
+function hasSlotLeftToday(partner, now) {
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  return partner.timeSlots.some((s) => slotStartMinutes(s) > nowMin);
+}
+
+/** Slot pertama yang masih bisa dipilih untuk tanggal tersebut. */
+export function firstAvailableSlot(partner, isoDate, now = new Date()) {
+  if (isoDate !== toISODate(now)) return partner.timeSlots[0];
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  return partner.timeSlots.find((s) => slotStartMinutes(s) > nowMin) ?? partner.timeSlots[0];
 }
 
 export function nextPickupDate(partner, today = new Date()) {
-  for (let i = 1; i <= 14; i++) {
+  for (let i = partner.sameDay && hasSlotLeftToday(partner, today) ? 0 : 1; i <= 14; i++) {
     const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
     if (partner.pickupDays.includes(d.getDay())) return toISODate(d);
   }
@@ -473,7 +657,7 @@ export function partnerUsedCapacity(partnerId, pickups) {
  * Nilai kecocokan satu mitra terhadap catatan limbah terpilih.
  * `issues` kosong = mitra bisa diajukan pengambilan.
  */
-export function evaluatePartner(partner, { records = [], pickups = [], origin }) {
+export function evaluatePartner(partner, { records = [], pickups = [], origin, now = new Date() }) {
   const issues = [];
   const totalKg = round2(records.reduce((s, r) => s + r.weightKg, 0));
 
@@ -499,8 +683,15 @@ export function evaluatePartner(partner, { records = [], pickups = [], origin })
     if (records.some((r) => r.contamination === "ada_kemasan")) issues.push("Limbah harus dipilah dulu (bebas plastik/kemasan).");
     if (records.some((r) => r.contamination === "belum_dicek")) issues.push("Status pemilahan limbah belum dicek.");
 
+    if (partner.type === "donasi") {
+      const next = nextPickupDate(partner, now);
+      const start = next && pickupStart(next, firstAvailableSlot(partner, next, now));
+      const expired = records.filter((r) => r.safeUntil && (!start || new Date(r.safeUntil) < start));
+      if (expired.length) issues.push("Batas aman konsumsi lewat sebelum jadwal pengambilan terdekat.");
+    }
+
     for (const r of records) {
-      const analysis = analyzeWasteRules(r);
+      const analysis = analyzeWasteRules(r, now);
       if (!analysis.sufficient) {
         issues.push("Ada catatan limbah yang datanya belum lengkap — lengkapi di AI Waste Analysis.");
         break;
@@ -529,7 +720,7 @@ export function evaluatePartner(partner, { records = [], pickups = [], origin })
     totalKg,
     suitability: worstSuitability,
     tariff: estimateTariff(partner, records),
-    nextPickup: nextPickupDate(partner),
+    nextPickup: nextPickupDate(partner, now),
   };
 }
 
@@ -558,7 +749,13 @@ export function validatePickupRequest({ partner, records, date, slot, pickups = 
   }
   if (!slot) errors.push("Pilih slot waktu pengambilan.");
   else if (partner && !partner.timeSlots.includes(slot)) errors.push("Slot waktu tidak tersedia untuk mitra ini.");
-  if (partner && records?.length) errors.push(...evaluatePartner(partner, { records, pickups, origin }).issues);
+  else if (date === toISODate(today) && slotStartMinutes(slot) <= today.getHours() * 60 + today.getMinutes()) {
+    errors.push("Slot waktu hari ini sudah lewat — pilih slot atau tanggal lain.");
+  }
+  if (partner?.type === "donasi" && date && slot && records?.some((r) => r.safeUntil && new Date(r.safeUntil) < pickupStart(date, slot))) {
+    errors.push("Jadwal pengambilan melewati batas aman konsumsi makanan.");
+  }
+  if (partner && records?.length) errors.push(...evaluatePartner(partner, { records, pickups, origin, now: today }).issues);
   return errors;
 }
 

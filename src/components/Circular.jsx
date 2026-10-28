@@ -455,7 +455,7 @@ export function PickupDetailModal({ pickup, records, onClose, onTransition, onPa
           {fmtDate(pickup.date)} · {pickup.slot}
         </DetailRow>
         <DetailRow label="Berat awal (tercatat)">{fmtKg(pickup.plannedKg)}</DetailRow>
-        <DetailRow label="Harga beli mitra">{pricePerKg > 0 ? `${fmtRp(pricePerKg)}/kg` : "Gratis (tidak dibeli)"}</DetailRow>
+        <DetailRow label="Harga beli mitra">{pricePerKg > 0 ? `${fmtRp(pricePerKg)}/kg` : pickup.pathway === "donasi" ? "Donasi (tanpa bayaran)" : "Gratis (tidak dibeli)"}</DetailRow>
         {!v && pricePerKg > 0 && (
           <DetailRow label="Estimasi pendapatan">{fmtRp(pricePerKg * pickup.plannedKg)}</DetailRow>
         )}
@@ -465,7 +465,7 @@ export function PickupDetailModal({ pickup, records, onClose, onTransition, onPa
       </dl>
 
       <h4 className="mt-5 mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-400)]">
-        Limbah yang disalurkan
+        Yang disalurkan
       </h4>
       <ul className="space-y-1.5">
         {items.map((r) => (
@@ -532,8 +532,11 @@ export function PickupDetailModal({ pickup, records, onClose, onTransition, onPa
             </>
           ) : (
             <p className="text-sm text-[var(--color-ink-600)]">
-              Mitra ini tidak membeli limbah tersebut — limbah diambil gratis
-              {estCost ? " (restoran membayar ongkos angkut)" : ""}.
+              {pickup.pathway === "donasi"
+                ? "Disalurkan sebagai donasi pangan — tanpa pembayaran."
+                : `Mitra ini tidak membeli limbah tersebut — limbah diambil gratis${
+                    estCost ? " (restoran membayar ongkos angkut)" : ""
+                  }.`}
             </p>
           )}
         </div>

@@ -107,7 +107,9 @@ Font: **Poppins** (di-load dari Google Fonts di `index.html`).
 
 ## Circular Recovery
 
-Modul tambahan untuk menyalurkan food waste ke mitra pengolah (maggot BSF, pengomposan, biogas).
+Modul tambahan untuk menyalurkan makanan berlebih & food waste ke mitra: bank pangan/lembaga donasi
+(makanan yang masih layak konsumsi), pengolah pakan, maggot BSF, pengomposan, dan biogas — mengikuti
+hierarki pemulihan pangan (manusia > pakan > energi > kompos).
 Tidak menggantikan fitur pencegahan — halaman-halamannya selalu mengarahkan ke AI Menu Planner
 dulu kalau bahan masih layak.
 
@@ -131,6 +133,9 @@ Catatan penting:
   "Menunggu pembayaran" sampai mitra mengonfirmasi (metode & no. referensi). Circular Impact
   menampilkan pendapatan diterima, menunggu pembayaran, ongkos angkut, dan hasil bersih.
   Harga di data demo adalah simulasi, bukan harga pasar.
+- **Donasi pangan**: kategori "Makanan berlebih layak konsumsi" wajib mengisi kondisi penyimpanan dan
+  batas aman konsumsi. Donasi tidak disarankan setelah batas itu lewat, dan tanggal pengambilan tidak
+  boleh melewatinya. Mitra donasi bisa mengambil di hari yang sama dan tidak ada pembayaran.
 - Integrasi fitur lama: bahan "hampir kedaluwarsa" dari Stock Predictor dan over-production dari
   Analisis Kerugian muncul sebagai referensi sumber limbah; ringkasan dampak juga tampil di Analytics.
 - Estimasi dampak lingkungan (CO₂e) sengaja tidak dihitung karena faktor emisi terverifikasi belum tersedia.

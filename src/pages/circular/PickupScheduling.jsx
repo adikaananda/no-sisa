@@ -31,6 +31,7 @@ import {
   createPickup,
   recordStatusMap,
   nextPickupDate,
+  firstAvailableSlot,
   pickupDaysLabel,
   isPickupActive,
   toISODate,
@@ -52,7 +53,7 @@ export default function PickupScheduling({ onNavigate, params }) {
     (params?.recordIds || []).filter((id) => ready.some((r) => r.id === id))
   );
   const [date, setDate] = useState(initialPartner ? nextPickupDate(initialPartner) ?? "" : "");
-  const [slot, setSlot] = useState(initialPartner?.timeSlots[0] ?? "");
+  const [slot, setSlot] = useState(() => (initialPartner && date ? firstAvailableSlot(initialPartner, date) : ""));
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState([]);
   const [filter, setFilter] = useState("active");
@@ -64,8 +65,9 @@ export default function PickupScheduling({ onNavigate, params }) {
   function selectPartner(id) {
     const p = partners.find((x) => x.id === id);
     setPartnerId(id);
-    setDate(p ? nextPickupDate(p) ?? "" : "");
-    setSlot(p?.timeSlots[0] ?? "");
+    const nextDate = p ? nextPickupDate(p) ?? "" : "";
+    setDate(nextDate);
+    setSlot(p && nextDate ? firstAvailableSlot(p, nextDate) : "");
     setErrors([]);
   }
 
@@ -218,7 +220,18 @@ export default function PickupScheduling({ onNavigate, params }) {
               />
             </div>
 
-            {evaluation && (
+            {evaluation && partner.type === "donasi" && (
+              <div className="rounded-xl bg-[#fff8e6] px-4 py-3 text-sm text-[var(--color-forest-900)] flex flex-wrap gap-x-6 gap-y-1">
+                <span>
+                  Total donasi: <b>{fmtKg(evaluation.totalKg)}</b> — tanpa biaya
+                </span>
+                <span>
+                  Jarak: <b>{evaluation.distanceKm} km</b>
+                </span>
+              </div>
+            )}
+
+            {evaluation && partner.type !== "donasi" && (
               <div className="rounded-xl bg-leaf-50 px-4 py-3 text-sm text-[var(--color-forest-900)] flex flex-wrap gap-x-6 gap-y-1">
                 <span>
                   Total: <b>{fmtKg(evaluation.totalKg)}</b>
