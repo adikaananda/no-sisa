@@ -16,6 +16,10 @@ const KEYS = {
   POS_STATUS: "nosisa.pos.status", // "connected" | "disconnected"
   POS_LAST_SYNC: "nosisa.pos.lastSync",
   SALES_RECORDS: "nosisa.pos.salesRecords",
+  // Circular Recovery
+  CR_RECORDS: "nosisa.circular.records",
+  CR_PICKUPS: "nosisa.circular.pickups",
+  CR_KITCHEN_LOCATION: "nosisa.circular.kitchenLocation",
 };
 
 
@@ -45,11 +49,13 @@ export function getJSON(key, fallback) {
   }
 }
 
+// Mengembalikan false kalau gagal (mis. kuota localStorage penuh karena foto)
 export function setJSON(key, value) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
-    // abaikan
+    return false;
   }
 }
 

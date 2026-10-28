@@ -1,9 +1,14 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, Tooltip, CartesianGrid } from "recharts";
-import { Leaf, TrendingUp, Wallet } from "lucide-react";
+import { Leaf, TrendingUp, Wallet, Recycle, ChevronRight } from "lucide-react";
 import { Card, SectionHeading } from "../components/Card";
 import { analytics } from "../lib/sampleData";
+import { useCircularData, fmtKg } from "../components/Circular";
+import { computeCircularStats } from "../lib/circularRecovery";
 
-export default function Analytics() {
+export default function Analytics({ onNavigate }) {
+  const { records, pickups } = useCircularData();
+  const circular = computeCircularStats(records, pickups);
+
   return (
     <div className="space-y-6 animate-rise">
       <div className="grid sm:grid-cols-3 gap-4">
@@ -138,6 +143,43 @@ export default function Analytics() {
           </div>
         </Card>
       </div>
+
+      {/* Circular Recovery — dihitung dari catatan & transaksi nyata di modul tersebut */}
+      <Card className="p-6">
+        <SectionHeading
+          eyebrow="Circular Recovery"
+          title="Penyaluran limbah ke mitra pengolah"
+          subtitle="Dari catatan limbah & transaksi di modul Circular Recovery — bukan data contoh"
+          action={
+            <button
+              onClick={() => onNavigate?.("cr-impact")}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-leaf-500)] shrink-0"
+            >
+              Lihat detail <ChevronRight size={15} />
+            </button>
+          }
+        />
+        {circular.recordCount === 0 ? (
+          <p className="text-sm text-[var(--color-ink-400)] flex items-center gap-2">
+            <Recycle size={16} className="text-[var(--color-leaf-500)]" />
+            Belum ada limbah yang dicatat di Circular Recovery.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              ["Tercatat", fmtKg(circular.totalRecordedKg)],
+              ["Diterima mitra", fmtKg(circular.receivedKg)],
+              ["Menunggu penyaluran", fmtKg(circular.pendingKg)],
+              ["Keberhasilan", circular.successRate == null ? "—" : `${circular.successRate}%`],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-xl bg-leaf-50 p-4">
+                <p className="text-xs font-semibold text-[var(--color-ink-600)] uppercase tracking-wide">{label}</p>
+                <p className="text-xl font-extrabold text-[var(--color-forest-900)] mt-1">{value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

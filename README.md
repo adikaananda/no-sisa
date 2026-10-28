@@ -10,6 +10,8 @@ Dibuat untuk submission HIPMI Berkaria Challenge 2026.
 - **AI Menu Planner** — input bahan yang tersedia -> Gemini AI menyusun 3 rekomendasi menu lengkap dengan estimasi gizi per porsi, memprioritaskan bahan yang hampir kedaluwarsa
 - **Stock Predictor** — grafik prediksi kebutuhan bahan baku 7 hari + tabel status inventori
 - **Analytics** — donut chart waste by category, tren waste vs penghematan, estimasi CO2e & biaya yang diselamatkan
+- **Circular Recovery** (modul tambahan) — menangani limbah organik yang tetap terjadi setelah pencegahan:
+  Record → Analyze → Match → Collect → Verify → Measure. Lihat bagian [Circular Recovery](#circular-recovery).
 - **Pengaturan** — tempat memasukkan Gemini API key (tersimpan lokal di browser, tombol "Tes koneksi" untuk validasi)
 
 ## Cara Menjalankan
@@ -102,6 +104,32 @@ src/
 | Gold 400 | #FFD166 | Aksen sekunder highlight |
 
 Font: **Poppins** (di-load dari Google Fonts di `index.html`).
+
+## Circular Recovery
+
+Modul tambahan untuk menyalurkan food waste ke mitra pengolah (maggot BSF, pengomposan, biogas).
+Tidak menggantikan fitur pencegahan — halaman-halamannya selalu mengarahkan ke AI Menu Planner
+dulu kalau bahan masih layak.
+
+| Halaman | Fungsi |
+|---|---|
+| Overview | Alur 6 tahap, ringkasan, daftar langkah berikutnya |
+| Waste Recording | Catat kategori, berat (timbangan/input staf), waktu, sumber, pemilahan, karakteristik, foto |
+| AI Waste Analysis | Rekomendasi jalur berbasis aturan + opsional Gemini; minta data tambahan kalau belum cukup |
+| Partner Network | Pencocokan mitra: jenis limbah, jarak, kapasitas, jadwal, biaya/nilai material |
+| Pickup Scheduling | Ajukan pengambilan & pantau status (Menunggu Konfirmasi → Disetujui → Terjadwal → Dalam Pengambilan → Diterima / Dibatalkan) |
+| Recovery History | Riwayat transaksi, berat awal vs berat aktual, selisih |
+| Circular Impact | Statistik dampak — hanya transaksi berstatus **Diterima** yang dihitung tersalurkan |
+
+Catatan penting:
+
+- **Data mitra adalah data demo (simulasi)** di `src/lib/circularRecovery.js` (`DEMO_PARTNERS`).
+  Aksi mitra (terima/tolak/konfirmasi penerimaan) disimulasikan di UI dan selalu diberi label simulasi.
+  Ganti dengan data & API mitra nyata saat tersedia.
+- Integrasi fitur lama: bahan "hampir kedaluwarsa" dari Stock Predictor dan over-production dari
+  Analisis Kerugian muncul sebagai referensi sumber limbah; ringkasan dampak juga tampil di Analytics.
+- Estimasi dampak lingkungan (CO₂e) sengaja tidak dihitung karena faktor emisi terverifikasi belum tersedia.
+- Logika inti bisa dicek tanpa browser: `npm run check:circular`.
 
 ## Catatan
 

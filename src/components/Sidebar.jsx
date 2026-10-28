@@ -1,4 +1,4 @@
-import { LayoutDashboard, ChefHat, PackageSearch, PieChart, Wallet, Settings, Leaf, X } from "lucide-react";
+import { LayoutDashboard, ChefHat, PackageSearch, PieChart, Wallet, Settings, Leaf, X, Recycle } from "lucide-react";
 import { LogoLockup } from "./LogoMark";
 
 const NAV = [
@@ -7,6 +7,21 @@ const NAV = [
   { id: "stock-predictor", label: "Stock Predictor", icon: PackageSearch, badge: "AI" },
   { id: "analytics", label: "Analytics", icon: PieChart },
   { id: "loss-analysis", label: "Analisis Kerugian", icon: Wallet, badge: "POS" },
+  {
+    id: "circular",
+    label: "Circular Recovery",
+    icon: Recycle,
+    badge: "BARU",
+    children: [
+      { id: "cr-overview", label: "Overview" },
+      { id: "cr-recording", label: "Waste Recording" },
+      { id: "cr-analysis", label: "AI Waste Analysis" },
+      { id: "cr-partners", label: "Partner Network" },
+      { id: "cr-pickups", label: "Pickup Scheduling" },
+      { id: "cr-history", label: "Recovery History" },
+      { id: "cr-impact", label: "Circular Impact" },
+    ],
+  },
   { id: "settings", label: "Pengaturan", icon: Settings },
 ];
 
@@ -32,34 +47,56 @@ export default function Sidebar({ active, onNavigate, open, onClose }) {
           </button>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1 mt-2" aria-label="Navigasi utama">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-4 space-y-1 mt-2 pb-2" aria-label="Navigasi utama">
           {NAV.map((item) => {
             const Icon = item.icon;
-            const isActive = active === item.id;
+            const inGroup = item.children?.some((c) => c.id === active);
+            const isActive = active === item.id || inGroup;
             return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                aria-current={isActive ? "page" : undefined}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors
-                  ${
-                    isActive
-                      ? "bg-white text-[var(--color-forest-900)] shadow-sm"
-                      : "text-white/80 hover:bg-white/10 hover:text-white"
-                  }`}
-              >
-                <Icon size={18} strokeWidth={2.1} />
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge && (
-                  <span
-                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      isActive ? "bg-[var(--color-leaf-100)] text-[var(--color-forest-900)]" : "bg-[var(--color-gold-400)] text-[var(--color-forest-950)]"
+              <div key={item.id}>
+                <button
+                  onClick={() => onNavigate(item.children ? item.children[0].id : item.id)}
+                  aria-current={active === item.id ? "page" : undefined}
+                  aria-expanded={item.children ? !!inGroup : undefined}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors
+                    ${
+                      isActive
+                        ? "bg-white text-[var(--color-forest-900)] shadow-sm"
+                        : "text-white/80 hover:bg-white/10 hover:text-white"
                     }`}
-                  >
-                    {item.badge}
-                  </span>
+                >
+                  <Icon size={18} strokeWidth={2.1} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.badge && (
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        isActive ? "bg-[var(--color-leaf-100)] text-[var(--color-forest-900)]" : "bg-[var(--color-gold-400)] text-[var(--color-forest-950)]"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+                {inGroup && (
+                  <ul className="ml-6 mt-1 mb-2 pl-3 border-l border-white/15 space-y-0.5">
+                    {item.children.map((c) => (
+                      <li key={c.id}>
+                        <button
+                          onClick={() => onNavigate(c.id)}
+                          aria-current={active === c.id ? "page" : undefined}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-[13px] transition-colors ${
+                            active === c.id
+                              ? "bg-white/15 text-white font-semibold"
+                              : "text-white/70 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          {c.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </button>
+              </div>
             );
           })}
         </nav>
